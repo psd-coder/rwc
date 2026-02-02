@@ -35,4 +35,33 @@ describe('x-if directive', () => {
     expect(span.textContent).toBe('2');
     expect(count.subs.size).toBe(1);
   });
+
+  it('supports non-template elements', async () => {
+    resetAdapterForTests();
+    registerAdapter(testAdapter);
+
+    const show = createStore(true);
+    const count = createStore(1);
+    const tag = nextTag('rwc-if-el');
+    defineComponent(tag, () => ({ show, count }));
+
+    document.body.innerHTML = `<${tag}><p class="note" x-if="show"><span x-text="count"></span></p></${tag}>`;
+    await nextTick();
+
+    let note = document.querySelector(`${tag} .note`) as HTMLParagraphElement;
+    expect(note).toBeTruthy();
+    expect(note.textContent).toBe('1');
+
+    setStore(show, false);
+    await nextTick();
+    expect(document.querySelector(`${tag} .note`)).toBeNull();
+    expect(count.subs.size).toBe(0);
+
+    setStore(count, 2);
+    setStore(show, true);
+    await nextTick();
+
+    note = document.querySelector(`${tag} .note`) as HTMLParagraphElement;
+    expect(note.textContent).toBe('2');
+  });
 });

@@ -34,4 +34,60 @@ describe('x-portal directive', () => {
     host.remove();
     expect(target.querySelector('span')).toBeNull();
   });
+
+  it('supports portal + if on the same template', async () => {
+    resetAdapterForTests();
+    registerAdapter(testAdapter);
+
+    const show = createStore(true);
+    const label = createStore('Yo');
+    const tag = nextTag('rwc-portal-if');
+    defineComponent(tag, () => ({ show, label }));
+
+    document.body.innerHTML = `
+      <div id="portal-if-target"></div>
+      <${tag}>
+        <template x-portal="#portal-if-target" x-if="show">
+          <span class="note" x-text="label"></span>
+        </template>
+      </${tag}>
+    `;
+
+    await nextTick();
+
+    const target = document.querySelector('#portal-if-target') as HTMLDivElement;
+    expect(target.querySelector('.note')?.textContent).toBe('Yo');
+
+    setStore(show, false);
+    await nextTick();
+    expect(target.querySelector('.note')).toBeNull();
+
+    setStore(label, 'Again');
+    setStore(show, true);
+    await nextTick();
+    expect(target.querySelector('.note')?.textContent).toBe('Again');
+  });
+
+  it('supports non-template elements', async () => {
+    resetAdapterForTests();
+    registerAdapter(testAdapter);
+
+    const label = createStore('Inline');
+    const tag = nextTag('rwc-portal-el');
+    defineComponent(tag, () => ({ label }));
+
+    document.body.innerHTML = `
+      <div id="portal-el-target"></div>
+      <${tag}>
+        <div class="inline" x-portal="#portal-el-target">
+          <span x-text="label"></span>
+        </div>
+      </${tag}>
+    `;
+
+    await nextTick();
+
+    const target = document.querySelector('#portal-el-target') as HTMLDivElement;
+    expect(target.querySelector('.inline')?.textContent?.trim()).toBe('Inline');
+  });
 });

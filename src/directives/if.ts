@@ -13,13 +13,35 @@ export function processIf(
   el: Element,
   exprSource: string,
   ctx: BindingContext,
-  processDirectives: DirectiveProcessor
+  processDirectives: DirectiveProcessor,
+  portalTargetSelector?: string
 ) {
-  if (!(el instanceof HTMLTemplateElement)) {
-    throw new Error('x-if must be used on a <template>');
+  const isTemplate = el instanceof HTMLTemplateElement;
+  let template: HTMLTemplateElement;
+  let anchor: ChildNode;
+  let portalTarget: Element | null = null;
+
+  if (portalTargetSelector) {
+    portalTarget = document.querySelector(portalTargetSelector);
+    if (!portalTarget) {
+      throw new Error(`Portal target not found: ${portalTargetSelector}`);
+    }
   }
 
-  const template = el;
+  if (isTemplate) {
+    template = el;
+    anchor = el;
+  } else {
+    const parent = el.parentNode;
+    if (!parent) return;
+    const placeholder = document.createComment('x-if');
+    parent.insertBefore(placeholder, el);
+    el.removeAttribute('x-if');
+    template = document.createElement('template');
+    template.content.append(el);
+    anchor = placeholder;
+  }
+
   let mounted: MountedBlock | null = null;
 
   const mount = () => {
@@ -28,7 +50,13 @@ export function processIf(
     const childCtx = createChildContext(ctx);
     processDirectives(fragment, childCtx);
     const nodes = Array.from(fragment.childNodes);
-    template.after(...nodes);
+    if (portalTarget) {
+      portalTarget.append(...nodes);
+    } else if (anchor instanceof HTMLTemplateElement) {
+      anchor.after(...nodes);
+    } else {
+      anchor.before(...nodes);
+    }
     mounted = { ctx: childCtx, nodes };
   };
 

@@ -1,47 +1,43 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>rwc - Todo Example</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <todo-app class="app">
-      <header class="header">
-        <h1>Todo</h1>
-        <p>Reactive Web Components example</p>
-      </header>
 
-      <div class="input-row">
-        <input
-          x-ref="input"
-          type="text"
-          placeholder="Add a task"
-          x-prop:value="draft"
-          x-on:input="onInput($event)" />
-        <button class="btn" x-on:click="add">Add</button>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rwc - Todo Example</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
 
-      <div class="meta">
-        <span x-text="items.length"></span> items total
-      </div>
+<body>
+  <todo-app class="app">
+    <header class="header">
+      <h1>Todo</h1>
+      <p>Reactive Web Components example</p>
+    </header>
 
-      <p class="empty" x-show="items.length === 0">No todos yet.</p>
+    <div class="input-row">
+      <input x-ref="input" type="text" placeholder="Add a task" x-prop:value="draft" x-on:input="onInput($event)" />
+      <button class="btn" x-on:click="add">Add</button>
+    </div>
 
-      <ul class="list">
-        <template x-for="item in items">
-          <li class="item" x-class:done="item.done">
-            <label>
-              <input type="checkbox" x-prop:checked="item.done" x-on:change="toggle(item)" />
-              <span x-text="item.text"></span>
-            </label>
-            <button class="remove" x-on:click="remove(item)">Remove</button>
-          </li>
-        </template>
-      </ul>
-    </todo-app>
+    <div class="meta">
+      <span x-text="items.length"></span> items total
+    </div>
 
-    <script type="module" src="./main.ts"></script>
-  </body>
+    <p class="empty" x-if="items.length === 0">No todos yet.</p>
+
+    <ul class="list" x-if="items.length > 0">
+      <li class="item" x-class:done="item.done" x-for="item in items">
+        <label>
+          <input type="checkbox" x-prop:checked="item.done" x-on:change="toggle(item)" />
+          <span x-text="item.text"></span>
+        </label>
+        <button class="remove" x-on:click="remove(item)">Remove</button>
+      </li>
+    </ul>
+  </todo-app>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+
 </html>

@@ -42,7 +42,51 @@ export function processDirectives(root: ParentNode, ctx: BindingContext) {
     elements.push(...Array.from(root.querySelectorAll('*')));
   }
 
+  const skipRoots: Element[] = [];
+
   for (const el of elements) {
+    if (skipRoots.some((root) => root !== el && root.contains(el))) {
+      continue;
+    }
+
+    const ifExpr = el.getAttribute('x-if');
+    const forExpr = el.getAttribute('x-for');
+    const portalTarget = el.getAttribute('x-portal');
+
+    if (ifExpr && portalTarget) {
+      if (!(el instanceof HTMLTemplateElement)) {
+        el.removeAttribute('x-if');
+        el.removeAttribute('x-portal');
+        skipRoots.push(el);
+      }
+      processIf(el, ifExpr, ctx, processDirectives, portalTarget);
+      continue;
+    }
+
+    if (ifExpr) {
+      if (!(el instanceof HTMLTemplateElement)) {
+        skipRoots.push(el);
+      }
+      processIf(el, ifExpr, ctx, processDirectives);
+      continue;
+    }
+
+    if (forExpr) {
+      if (!(el instanceof HTMLTemplateElement)) {
+        skipRoots.push(el);
+      }
+      processFor(el, forExpr, ctx, processDirectives);
+      continue;
+    }
+
+    if (portalTarget) {
+      if (!(el instanceof HTMLTemplateElement)) {
+        skipRoots.push(el);
+      }
+      processPortal(el, portalTarget, ctx, processDirectives);
+      continue;
+    }
+
     for (const attr of Array.from(el.attributes)) {
       const handler = handlers[attr.name];
       if (handler) {
@@ -62,5 +106,6 @@ export function processDirectives(root: ParentNode, ctx: BindingContext) {
         }
       }
     }
+
   }
 }

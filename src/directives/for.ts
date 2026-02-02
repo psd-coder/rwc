@@ -24,17 +24,29 @@ export function processFor(
   ctx: BindingContext,
   processDirectives: DirectiveProcessor
 ) {
-  if (!(el instanceof HTMLTemplateElement)) {
-    throw new Error('x-for must be used on a <template>');
+  const { itemName, indexName, listExpr } = parseForExpression(exprSource);
+  const isTemplate = el instanceof HTMLTemplateElement;
+  let template: HTMLTemplateElement;
+  let anchor: ChildNode;
+
+  if (isTemplate) {
+    template = el;
+    const marker = document.createComment('x-for');
+    template.after(marker);
+    anchor = marker;
+  } else {
+    const parent = el.parentNode;
+    if (!parent) return;
+    const placeholder = document.createComment('x-for');
+    parent.insertBefore(placeholder, el);
+    el.removeAttribute('x-for');
+    template = document.createElement('template');
+    template.content.append(el);
+    anchor = placeholder;
   }
 
-  const { itemName, indexName, listExpr } = parseForExpression(exprSource);
-  const template = el;
-  const parent = template.parentNode;
+  const parent = anchor.parentNode;
   if (!parent) return;
-
-  const endMarker = document.createComment('x-for');
-  template.after(endMarker);
 
   const entries = new Map<unknown, Entry>();
 
@@ -106,7 +118,7 @@ export function processFor(
 
     for (const entry of ordered) {
       for (const node of entry.nodes) {
-        parent.insertBefore(node, endMarker);
+        parent.insertBefore(node, anchor);
       }
     }
   };
@@ -116,7 +128,7 @@ export function processFor(
     for (const entry of entries.values()) {
       disposeEntry(entry);
     }
-    endMarker.remove();
+    anchor.remove();
   });
 }
 

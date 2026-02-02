@@ -49,4 +49,39 @@ describe('x-for directive', () => {
     expect(nodeB.textContent).toBe('0');
     expect(nodeA.textContent).toBe('1');
   });
+
+  it('supports non-template elements', async () => {
+    resetAdapterForTests();
+    registerAdapter(testAdapter);
+
+    const items = createStore(['a', 'b']);
+    const tag = nextTag('rwc-for-el');
+    defineComponent(tag, () => ({ items }));
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <li x-for="item in items">
+            <span x-text="item"></span>
+          </li>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    const lis = Array.from(list.querySelectorAll('li'));
+    expect(lis.length).toBe(2);
+    expect(lis[0].textContent?.trim()).toBe('a');
+    expect(lis[1].textContent?.trim()).toBe('b');
+
+    setStore(items, ['b', 'c']);
+    await nextTick();
+
+    const lisNext = Array.from(list.querySelectorAll('li'));
+    expect(lisNext.length).toBe(2);
+    expect(lisNext[0].textContent?.trim()).toBe('b');
+    expect(lisNext[1].textContent?.trim()).toBe('c');
+  });
 });

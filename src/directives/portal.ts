@@ -9,16 +9,28 @@ export function processPortal(
   ctx: BindingContext,
   processDirectives: DirectiveProcessor
 ) {
-  if (!(el instanceof HTMLTemplateElement)) {
-    throw new Error('x-portal must be used on a <template>');
-  }
-
   const target = document.querySelector(selector);
   if (!target) {
     throw new Error(`Portal target not found: ${selector}`);
   }
 
-  const fragment = el.content.cloneNode(true) as DocumentFragment;
+  const isTemplate = el instanceof HTMLTemplateElement;
+  let template: HTMLTemplateElement;
+  let placeholder: Comment | null = null;
+
+  if (isTemplate) {
+    template = el;
+  } else {
+    const parent = el.parentNode;
+    if (!parent) return;
+    placeholder = document.createComment('x-portal');
+    parent.insertBefore(placeholder, el);
+    el.removeAttribute('x-portal');
+    template = document.createElement('template');
+    template.content.append(el);
+  }
+
+  const fragment = template.content.cloneNode(true) as DocumentFragment;
   const childCtx = createChildContext(ctx);
   processDirectives(fragment, childCtx);
   const nodes = Array.from(fragment.childNodes);
@@ -29,5 +41,6 @@ export function processPortal(
       dispose();
     }
     nodes.forEach(node => node.parentNode?.removeChild(node));
+    placeholder?.remove();
   });
 }
