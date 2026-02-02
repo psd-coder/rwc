@@ -31,24 +31,20 @@
         <strong x-text="selected.label || 'None'"></strong>
       </p>
 
-      <template x-portal="body">
-        <template x-if="isOpen">
-          <div
-            class="dropdown"
-            x-attr:data-dropdown-for="hostId"
-            x-style:top="dropdownStyle.top"
-            x-style:left="dropdownStyle.left"
-            x-style:width="dropdownStyle.width">
-            <template x-for="option in filtered">
-              <button class="option" x-on:click="select(option)">
-                <span class="label" x-text="option.label"></span>
-                <span class="code" x-text="option.code"></span>
-              </button>
-            </template>
-            <p class="empty" x-show="filtered.length === 0">No matches.</p>
-          </div>
-        </template>
-      </template>
+      <div
+        class="dropdown"
+        x-portal="body"
+        x-if="isOpen"
+        x-attr:data-dropdown-for="hostId"
+        x-style:top="dropdownStyle.top"
+        x-style:left="dropdownStyle.left"
+        x-style:width="dropdownStyle.width">
+        <button class="option" x-on:click="select(option)" x-for="option in filtered">
+          <span class="label" x-text="option.label"></span>
+          <span class="code" x-text="option.code"></span>
+        </button>
+        <p class="empty" x-show="filtered.length === 0">No matches.</p>
+      </div>
     </combo-box>
 
     <script type="module" src="./main.ts"></script>
