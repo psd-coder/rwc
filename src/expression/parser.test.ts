@@ -1,0 +1,79 @@
+import { describe, expect, it } from 'vitest';
+import { parse } from './parser';
+
+describe('expression parser', () => {
+  it('parses literals and identifiers', () => {
+    expect(parse('123')).toEqual({ type: 'literal', value: 123 });
+    expect(parse('"hi"')).toEqual({ type: 'literal', value: 'hi' });
+    expect(parse('true')).toEqual({ type: 'literal', value: true });
+    expect(parse('null')).toEqual({ type: 'literal', value: null });
+    expect(parse('user')).toEqual({ type: 'ident', name: 'user' });
+  });
+
+  it('parses binary precedence', () => {
+    expect(parse('1 + 2 * 3')).toEqual({
+      type: 'binary',
+      op: '+',
+      left: { type: 'literal', value: 1 },
+      right: {
+        type: 'binary',
+        op: '*',
+        left: { type: 'literal', value: 2 },
+        right: { type: 'literal', value: 3 }
+      }
+    });
+  });
+
+  it('parses unary and ternary', () => {
+    expect(parse('!active')).toEqual({
+      type: 'unary',
+      op: '!',
+      arg: { type: 'ident', name: 'active' }
+    });
+
+    expect(parse('flag ? a : b')).toEqual({
+      type: 'ternary',
+      test: { type: 'ident', name: 'flag' },
+      consequent: { type: 'ident', name: 'a' },
+      alternate: { type: 'ident', name: 'b' }
+    });
+  });
+
+  it('parses member, index, and call chains', () => {
+    expect(parse('user.name')).toEqual({
+      type: 'member',
+      object: { type: 'ident', name: 'user' },
+      property: 'name'
+    });
+
+    expect(parse('items[0]')).toEqual({
+      type: 'index',
+      object: { type: 'ident', name: 'items' },
+      index: { type: 'literal', value: 0 }
+    });
+
+    expect(parse('obj.method(1, foo)')).toEqual({
+      type: 'call',
+      callee: {
+        type: 'member',
+        object: { type: 'ident', name: 'obj' },
+        property: 'method'
+      },
+      args: [{ type: 'literal', value: 1 }, { type: 'ident', name: 'foo' }]
+    });
+  });
+
+  it('respects grouping', () => {
+    expect(parse('(1 + 2) * 3')).toEqual({
+      type: 'binary',
+      op: '*',
+      left: {
+        type: 'binary',
+        op: '+',
+        left: { type: 'literal', value: 1 },
+        right: { type: 'literal', value: 2 }
+      },
+      right: { type: 'literal', value: 3 }
+    });
+  });
+});
