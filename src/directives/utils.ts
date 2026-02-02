@@ -20,7 +20,13 @@ export function bindExpression(
   specials: Specials = {}
 ) {
   const expr = parse(source);
-  const run = () => callback(evaluateExpr(expr, ctx, specials));
+  let lastValue: unknown = bindExpressionUninitialized;
+  const run = () => {
+    const nextValue = evaluateExpr(expr, ctx, specials);
+    if (Object.is(lastValue, nextValue)) return;
+    lastValue = nextValue;
+    callback(nextValue);
+  };
 
   run();
 
@@ -32,3 +38,5 @@ export function bindExpression(
 
   return run;
 }
+
+const bindExpressionUninitialized = Symbol('bindExpressionUninitialized');

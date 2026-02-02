@@ -50,6 +50,7 @@ export function processFor(
 
   const entries = new Map<unknown, Entry>();
   let hydrationAttempted = false;
+  let lastOrder: unknown[] | null = null;
 
   const isIgnorableText = (node: Node) =>
     node.nodeType === Node.TEXT_NODE && !node.textContent?.trim();
@@ -205,11 +206,23 @@ export function processFor(
       }
     }
 
-    for (const entry of ordered) {
-      for (const node of entry.nodes) {
-        parent.insertBefore(node, anchor);
+    const nextOrder = ordered.map(entry => entry.key);
+    const missingNodes = ordered.some(entry => entry.nodes.some(node => node.parentNode !== parent));
+    let orderChanged = true;
+    if (lastOrder && lastOrder.length === nextOrder.length) {
+      const previous = lastOrder;
+      orderChanged = nextOrder.some((key, index) => key !== previous[index]);
+    }
+
+    if (missingNodes || orderChanged) {
+      for (const entry of ordered) {
+        for (const node of entry.nodes) {
+          parent.insertBefore(node, anchor);
+        }
       }
     }
+
+    lastOrder = nextOrder;
   };
 
   bindExpression(listExpr, ctx, update);
