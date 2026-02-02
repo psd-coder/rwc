@@ -31,6 +31,12 @@ defineComponent('todo-app', (ctx) => {
     ctx.$refs.input?.focus();
   };
 
+  ctx.on(ctx.$refs.input, 'keydown', (event: KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      add();
+    }
+  });
+
   const toggle = (item: TodoItem) => {
     setItems(
       items.value.map((current) =>

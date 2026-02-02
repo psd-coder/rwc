@@ -86,3 +86,13 @@ export function createContext(host: HTMLElement, disposers: Set<() => void>): Co
     effect
   };
 }
+
+export function collectStaticRefs(host: HTMLElement, refs: Record<string, HTMLElement>) {
+  const candidates = host.querySelectorAll('[x-ref]');
+  for (const el of candidates) {
+    if (el.closest('template, [x-if], [x-for], [x-portal]')) continue;
+    const name = el.getAttribute('x-ref')?.trim();
+    if (!name) continue;
+    refs[name] = el as HTMLElement;
+  }
+}

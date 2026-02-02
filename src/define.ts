@@ -1,4 +1,4 @@
-import { createContext, type BindingContext } from './context';
+import { collectStaticRefs, createContext, type BindingContext } from './context';
 import { getAdapter } from './adapters/registry';
 import { processDirectives } from './directives/registry';
 
@@ -15,10 +15,11 @@ export function defineComponent(name: string, setup: SetupFn) {
 
     connectedCallback() {
       const componentCtx = createContext(this, this.cleanup);
-      const scope = setup(componentCtx);
-      this.ctx = { scope: { ...scope, $refs: componentCtx.$refs }, adapter: getAdapter(), disposers: this.cleanup };
       queueMicrotask(() => {
-        if (!this.ctx) return;
+        if (!this.isConnected) return;
+        collectStaticRefs(this, componentCtx.$refs);
+        const scope = setup(componentCtx);
+        this.ctx = { scope: { ...scope, $refs: componentCtx.$refs }, adapter: getAdapter(), disposers: this.cleanup };
         processDirectives(this, this.ctx);
       });
     }
