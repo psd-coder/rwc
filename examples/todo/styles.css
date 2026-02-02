@@ -1,0 +1,100 @@
+:root {
+  color: #111827;
+  background: #f4f1ea;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  max-width: 720px;
+  margin: 8vh auto;
+  padding: 0 24px 48px;
+}
+
+.header h1 {
+  font-size: 42px;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.header p {
+  margin: 0;
+  color: #6b5f52;
+}
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0 12px;
+}
+
+.input-row input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #c7b9a8;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #fffaf2;
+}
+
+.btn {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #d97706;
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+.meta {
+  color: #6b5f52;
+  font-size: 14px;
+}
+
+.empty {
+  margin-top: 18px;
+  color: #9a8b7a;
+}
+
+.list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #fffaf2;
+  border: 1px solid #e3d6c6;
+}
+
+.item label {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.item.done span {
+  text-decoration: line-through;
+  color: #9a8b7a;
+}
+
+.remove {
+  border: none;
+  background: transparent;
+  color: #b45309;
+  cursor: pointer;
+  font-size: 14px;
+}
