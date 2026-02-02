@@ -28,12 +28,11 @@ export function processFor(
   const isTemplate = el instanceof HTMLTemplateElement;
   let template: HTMLTemplateElement;
   let anchor: ChildNode;
+  let anchorInserted = false;
 
   if (isTemplate) {
     template = el;
-    const marker = document.createComment('x-for');
-    template.after(marker);
-    anchor = marker;
+    anchor = document.createComment('x-for');
   } else {
     const parent = el.parentNode;
     if (!parent) return;
@@ -43,12 +42,43 @@ export function processFor(
     template = document.createElement('template');
     template.content.append(el);
     anchor = placeholder;
+    anchorInserted = true;
   }
 
-  const parent = anchor.parentNode;
+  const parent = isTemplate ? template.parentNode : anchor.parentNode;
   if (!parent) return;
 
   const entries = new Map<unknown, Entry>();
+  let hydrationAttempted = false;
+
+  const isIgnorableText = (node: Node) =>
+    node.nodeType === Node.TEXT_NODE && !node.textContent?.trim();
+
+  const templatePattern = Array.from(template.content.childNodes).filter(node => !isIgnorableText(node));
+
+  const matchesPattern = (node: Node, patternNode: Node) => {
+    if (node.nodeType !== patternNode.nodeType) return false;
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      return (node as Element).tagName === (patternNode as Element).tagName;
+    }
+    return true;
+  };
+
+  const ensureAnchor = (afterNode: ChildNode | null = null) => {
+    if (anchorInserted) return;
+    const refNode =
+      afterNode && afterNode.parentNode === parent ? afterNode.nextSibling : template.nextSibling;
+    parent.insertBefore(anchor, refNode);
+    anchorInserted = true;
+  };
+
+  const bindEntryNodes = (nodes: Node[], childCtx: BindingContext) => {
+    for (const node of nodes) {
+      if (node instanceof Element) {
+        processDirectives(node, childCtx);
+      }
+    }
+  };
 
   const disposeEntry = (entry: Entry, removeNodes = true) => {
     for (const dispose of entry.ctx.disposers) {
@@ -59,10 +89,14 @@ export function processFor(
     }
   };
 
-  const createEntry = (item: unknown, index: number): Entry => {
+  const createEntry = (item: unknown, index: number, nodesOverride?: Node[]): Entry => {
     const scopeOverrides: Record<string, unknown> = { [itemName]: item, $index: index };
     if (indexName) scopeOverrides[indexName] = index;
     const childCtx = createChildContext(ctx, scopeOverrides);
+    if (nodesOverride) {
+      bindEntryNodes(nodesOverride, childCtx);
+      return { key: getKey(item, index), item, index, ctx: childCtx, nodes: nodesOverride };
+    }
     const fragment = template.content.cloneNode(true) as DocumentFragment;
     processDirectives(fragment, childCtx);
     const nodes = Array.from(fragment.childNodes);
@@ -77,15 +111,70 @@ export function processFor(
     entry.ctx = nextCtx;
     entry.item = item;
     entry.index = index;
-    for (const node of entry.nodes) {
-      if (node instanceof Element) {
-        processDirectives(node, nextCtx);
-      }
+    bindEntryNodes(entry.nodes, nextCtx);
+  };
+
+  const hydrateEntries = (items: unknown[]) => {
+    if (hydrationAttempted || !isTemplate) return;
+    hydrationAttempted = true;
+
+    if (items.length === 0 || templatePattern.length === 0) {
+      ensureAnchor();
+      return;
     }
+
+    const groups: Node[][] = [];
+    let current: Node[] = [];
+    let patternIndex = 0;
+    let entryIndex = 0;
+    let lastNode: ChildNode | null = null;
+    let node = template.nextSibling;
+
+    while (node && entryIndex < items.length) {
+      const next = node.nextSibling;
+      if (isIgnorableText(node)) {
+        current.push(node);
+        lastNode = node;
+        node = next;
+        continue;
+      }
+
+      const expected = templatePattern[patternIndex];
+      if (!expected || !matchesPattern(node, expected)) {
+        ensureAnchor();
+        return;
+      }
+
+      current.push(node);
+      lastNode = node;
+      patternIndex += 1;
+
+      if (patternIndex === templatePattern.length) {
+        groups.push(current);
+        current = [];
+        patternIndex = 0;
+        entryIndex += 1;
+      }
+
+      node = next;
+    }
+
+    if (entryIndex !== items.length || patternIndex !== 0) {
+      ensureAnchor();
+      return;
+    }
+
+    groups.forEach((nodes, index) => {
+      const entry = createEntry(items[index], index, nodes);
+      entries.set(entry.key, entry);
+    });
+
+    ensureAnchor(lastNode);
   };
 
   const update = (value: unknown) => {
     const items = Array.isArray(value) ? value : [];
+    hydrateEntries(items);
     const nextKeys = new Set<unknown>();
     const ordered: Entry[] = [];
 

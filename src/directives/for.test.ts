@@ -50,6 +50,53 @@ describe('x-for directive', () => {
     expect(nodeA.textContent).toBe('1');
   });
 
+  it('hydrates existing DOM without re-rendering', async () => {
+    resetAdapterForTests();
+    registerAdapter(testAdapter);
+
+    const items = createStore([
+      { id: 'a', label: 'Alpha' },
+      { id: 'b', label: 'Beta' }
+    ]);
+    const tag = nextTag('rwc-for-hydrate');
+    defineComponent(tag, () => ({ items }));
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items">
+            <li x-attr:data-id="item.id" x-text="item.label"></li>
+          </template>
+          <li data-id="a">Alpha</li>
+          <li data-id="b">Beta</li>
+        </ul>
+      </${tag}>
+    `;
+
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    const nodeA = list.querySelector('li[data-id="a"]') as HTMLLIElement;
+    const nodeB = list.querySelector('li[data-id="b"]') as HTMLLIElement;
+
+    await nextTick();
+
+    const lis = Array.from(list.querySelectorAll('li'));
+    expect(lis.length).toBe(2);
+    expect(list.querySelector('li[data-id="a"]')).toBe(nodeA);
+    expect(list.querySelector('li[data-id="b"]')).toBe(nodeB);
+    expect(nodeA.textContent).toBe('Alpha');
+    expect(nodeB.textContent).toBe('Beta');
+
+    setStore(items, [
+      { id: 'b', label: 'Beta' },
+      { id: 'a', label: 'Alpha' }
+    ]);
+    await nextTick();
+
+    const reordered = Array.from(list.querySelectorAll('li'));
+    expect(reordered[0]).toBe(nodeB);
+    expect(reordered[1]).toBe(nodeA);
+  });
+
   it('supports non-template elements', async () => {
     resetAdapterForTests();
     registerAdapter(testAdapter);
