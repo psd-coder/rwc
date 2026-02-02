@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import { createBindingContext } from '../context';
+import { processFor } from './for';
 import { defineComponent } from '../define';
 import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
 import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
 
 describe('x-for directive', () => {
+  it('requires x-key', () => {
+    const template = document.createElement('template');
+    template.setAttribute('x-for', 'item in items');
+    const ctx = createBindingContext({ items: [] }, testAdapter);
+
+    expect(() => processFor(template, 'item in items', ctx, () => {})).toThrow(/x-key/);
+  });
+
   it('renders and reorders keyed items', async () => {
     resetAdapterForTests();
     registerAdapter(testAdapter);
@@ -18,7 +28,7 @@ describe('x-for directive', () => {
     document.body.innerHTML = `
       <${tag}>
         <ul>
-          <template x-for="item in items">
+          <template x-for="item in items" x-key="item.id">
             <li x-attr:data-id="item.id" x-text="$index"></li>
           </template>
         </ul>
@@ -64,7 +74,7 @@ describe('x-for directive', () => {
     document.body.innerHTML = `
       <${tag}>
         <ul>
-          <template x-for="item in items">
+          <template x-for="item in items" x-key="item.id">
             <li x-attr:data-id="item.id" x-text="item.label"></li>
           </template>
           <li data-id="a">Alpha</li>
@@ -108,7 +118,7 @@ describe('x-for directive', () => {
     document.body.innerHTML = `
       <${tag}>
         <ul>
-          <li x-for="item in items">
+          <li x-for="item in items" x-key="item">
             <span x-text="item"></span>
           </li>
         </ul>

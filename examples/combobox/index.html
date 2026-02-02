@@ -39,7 +39,7 @@
         x-style:top="dropdownStyle.top"
         x-style:left="dropdownStyle.left"
         x-style:width="dropdownStyle.width">
-        <button class="option" x-on:click="select(option)" x-for="option in filtered">
+        <button class="option" x-on:click="select(option)" x-for="option in filtered" x-key="option.id">
           <span class="label" x-text="option.label"></span>
           <span class="code" x-text="option.code"></span>
         </button>

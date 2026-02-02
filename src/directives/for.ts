@@ -1,6 +1,7 @@
 import type { BindingContext } from '../context';
-import { createChildContext } from '../context';
-import { bindExpression } from './utils';
+import { createBindingContext, createChildContext } from '../context';
+import { bindExpression, evaluateExpr } from './utils';
+import { parse } from '../expression/parser';
 
 type ForParts = {
   itemName: string;
@@ -25,6 +26,11 @@ export function processFor(
   processDirectives: DirectiveProcessor
 ) {
   const { itemName, indexName, listExpr } = parseForExpression(exprSource);
+  const keyExprSource = el.getAttribute('x-key');
+  if (!keyExprSource) {
+    throw new Error('x-for requires x-key');
+  }
+  const keyExpr = parse(keyExprSource);
   const isTemplate = el instanceof HTMLTemplateElement;
   let template: HTMLTemplateElement;
   let anchor: ChildNode;
@@ -90,24 +96,37 @@ export function processFor(
     }
   };
 
-  const createEntry = (item: unknown, index: number, nodesOverride?: Node[]): Entry => {
+  const createScopeOverrides = (item: unknown, index: number) => {
     const scopeOverrides: Record<string, unknown> = { [itemName]: item, $index: index };
     if (indexName) scopeOverrides[indexName] = index;
+    return scopeOverrides;
+  };
+
+  const evaluateKey = (scopeOverrides: Record<string, unknown>) => {
+    const keyCtx = createBindingContext({ ...ctx.scope, ...scopeOverrides }, ctx.adapter);
+    return evaluateExpr(keyExpr, keyCtx);
+  };
+
+  const createEntry = (
+    item: unknown,
+    index: number,
+    scopeOverrides: Record<string, unknown>,
+    key: unknown,
+    nodesOverride?: Node[]
+  ): Entry => {
     const childCtx = createChildContext(ctx, scopeOverrides);
     if (nodesOverride) {
       bindEntryNodes(nodesOverride, childCtx);
-      return { key: getKey(item, index), item, index, ctx: childCtx, nodes: nodesOverride };
+      return { key, item, index, ctx: childCtx, nodes: nodesOverride };
     }
     const fragment = template.content.cloneNode(true) as DocumentFragment;
     processDirectives(fragment, childCtx);
     const nodes = Array.from(fragment.childNodes);
-    return { key: getKey(item, index), item, index, ctx: childCtx, nodes };
+    return { key, item, index, ctx: childCtx, nodes };
   };
 
-  const rebindEntry = (entry: Entry, item: unknown, index: number) => {
+  const rebindEntry = (entry: Entry, item: unknown, index: number, scopeOverrides: Record<string, unknown>) => {
     disposeEntry(entry, false);
-    const scopeOverrides: Record<string, unknown> = { [itemName]: item, $index: index };
-    if (indexName) scopeOverrides[indexName] = index;
     const nextCtx = createChildContext(ctx, scopeOverrides);
     entry.ctx = nextCtx;
     entry.item = item;
@@ -166,7 +185,9 @@ export function processFor(
     }
 
     groups.forEach((nodes, index) => {
-      const entry = createEntry(items[index], index, nodes);
+      const scopeOverrides = createScopeOverrides(items[index], index);
+      const key = evaluateKey(scopeOverrides);
+      const entry = createEntry(items[index], index, scopeOverrides, key, nodes);
       entries.set(entry.key, entry);
     });
 
@@ -180,15 +201,16 @@ export function processFor(
     const ordered: Entry[] = [];
 
     items.forEach((item, index) => {
-      const key = getKey(item, index);
+      const scopeOverrides = createScopeOverrides(item, index);
+      const key = evaluateKey(scopeOverrides);
       nextKeys.add(key);
       let entry = entries.get(key);
 
       if (!entry) {
-        entry = createEntry(item, index);
+        entry = createEntry(item, index, scopeOverrides, key);
         entries.set(key, entry);
       } else if (entry.item !== item || entry.index !== index) {
-        rebindEntry(entry, item, index);
+        rebindEntry(entry, item, index, scopeOverrides);
       } else {
         entry.ctx.scope[itemName] = item;
         entry.ctx.scope.$index = index;
@@ -209,9 +231,31 @@ export function processFor(
     const nextOrder = ordered.map(entry => entry.key);
     const missingNodes = ordered.some(entry => entry.nodes.some(node => node.parentNode !== parent));
     let orderChanged = true;
-    if (lastOrder && lastOrder.length === nextOrder.length) {
-      const previous = lastOrder;
-      orderChanged = nextOrder.some((key, index) => key !== previous[index]);
+    const previous = lastOrder;
+
+    if (previous) {
+      if (previous.length === nextOrder.length) {
+        orderChanged = nextOrder.some((key, index) => key !== previous[index]);
+      } else {
+        const minLength = Math.min(previous.length, nextOrder.length);
+        const prefixSame = previous.slice(0, minLength).every((key, index) => key === nextOrder[index]);
+
+        if (prefixSame && nextOrder.length > previous.length && missingNodes) {
+          const appended = ordered.slice(previous.length);
+          for (const entry of appended) {
+            for (const node of entry.nodes) {
+              parent.insertBefore(node, anchor);
+            }
+          }
+          lastOrder = nextOrder;
+          return;
+        }
+
+        if (prefixSame && nextOrder.length < previous.length && !missingNodes) {
+          lastOrder = nextOrder;
+          return;
+        }
+      }
     }
 
     if (missingNodes || orderChanged) {
@@ -257,12 +301,4 @@ function parseForExpression(source: string): ForParts {
   }
 
   return { itemName, indexName, listExpr };
-}
-
-function getKey(item: unknown, index: number) {
-  if (item && typeof item === 'object') {
-    const candidate = (item as { id?: unknown; key?: unknown }).id ?? (item as { key?: unknown }).key;
-    if (candidate != null) return candidate;
-  }
-  return index;
 }

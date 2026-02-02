@@ -27,7 +27,7 @@
     <p class="empty" x-if="items.length === 0">No todos yet.</p>
 
     <ul class="list" x-if="items.length > 0">
-      <li class="item" x-class:done="item.done" x-for="item in items">
+      <li class="item" x-class:done="item.done" x-for="item in items" x-key="item.id">
         <label>
           <input type="checkbox" x-prop:checked="item.done" x-on:change="toggle(item)" />
           <span x-text="item.text"></span>
