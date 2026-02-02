@@ -19,6 +19,8 @@ export type Expr =
   | IdentExpr
   | MemberExpr
   | IndexExpr
+  | ArrayExpr
+  | ObjectExpr
   | UnaryExpr
   | BinaryExpr
   | TernaryExpr
@@ -44,6 +46,16 @@ export interface IndexExpr {
   type: 'index';
   object: Expr;
   index: Expr;
+}
+
+export interface ArrayExpr {
+  type: 'array';
+  items: Expr[];
+}
+
+export interface ObjectExpr {
+  type: 'object';
+  entries: Array<{ key: string; value: Expr }>;
 }
 
 export interface UnaryExpr {

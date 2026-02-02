@@ -32,6 +32,15 @@ export function evaluate(
       const index = evaluate(expr.index, scope, specials, resolve) as PropertyKey;
       return object?.[index];
     }
+    case 'array':
+      return expr.items.map(item => evaluate(item, scope, specials, resolve));
+    case 'object': {
+      const result: Record<string, unknown> = {};
+      for (const entry of expr.entries) {
+        result[entry.key] = evaluate(entry.value, scope, specials, resolve);
+      }
+      return result;
+    }
     case 'unary': {
       const value = evaluate(expr.arg, scope, specials, resolve);
       switch (expr.op) {

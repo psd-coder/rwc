@@ -29,6 +29,21 @@ export interface BindingContext {
   disposers: Set<() => void>;
 }
 
+export function createBindingContext(
+  scope: Record<string, unknown>,
+  adapter: ReactivityAdapter,
+  disposers: Set<() => void> = new Set()
+): BindingContext {
+  return { scope, adapter, disposers };
+}
+
+export function createChildContext(
+  parent: BindingContext,
+  scopeOverrides: Record<string, unknown> = {}
+): BindingContext {
+  return createBindingContext({ ...parent.scope, ...scopeOverrides }, parent.adapter, new Set());
+}
+
 export function createContext(host: HTMLElement, disposers: Set<() => void>): ComponentContext {
   const adapter = getAdapter();
   const refs: Record<string, HTMLElement> = {};

@@ -17,6 +17,8 @@ const SINGLE_CHAR_OPS = new Set([
   '!',
   '?',
   ':',
+  '{',
+  '}',
   '.',
   ',',
   '(',

@@ -1,43 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
 import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import type { ReactivityAdapter } from '../adapters/types';
-
-type Store<T> = { value: T; subs: Set<(value: T) => void> };
-
-const createStore = <T,>(value: T): Store<T> => ({ value, subs: new Set() });
-
-const adapter: ReactivityAdapter<Store<unknown>> = {
-  isStore: (value): value is Store<unknown> =>
-    !!value && typeof value === 'object' && 'value' in value && 'subs' in value,
-  get: (store) => store.value,
-  subscribe: (store, callback) => {
-    const handler = (value: unknown) => callback(value);
-    store.subs.add(handler);
-    callback(store.value);
-    return () => store.subs.delete(handler);
-  }
-};
-
-const setStore = <T,>(store: Store<T>, value: T) => {
-  store.value = value;
-  for (const sub of store.subs) sub(value);
-};
-
-const nextTick = () => Promise.resolve();
+import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
 
 describe('x-text directive', () => {
   it('renders and updates text content', async () => {
     resetAdapterForTests();
-    registerAdapter(adapter);
+    registerAdapter(testAdapter);
 
     const count = createStore(1);
 
-    defineComponent('rwc-text-test', () => ({ count }));
+    const tag = nextTag('rwc-text');
+    defineComponent(tag, () => ({ count }));
 
-    document.body.innerHTML = '<rwc-text-test><span x-text="count"></span></rwc-text-test>';
+    document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
 
-    const span = document.querySelector('rwc-text-test span') as HTMLSpanElement;
+    const span = document.querySelector(`${tag} span`) as HTMLSpanElement;
     await nextTick();
     expect(span.textContent).toBe('1');
 

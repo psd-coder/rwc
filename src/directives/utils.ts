@@ -1,0 +1,34 @@
+import type { BindingContext } from '../context';
+import { collectDependencies } from '../expression/deps';
+import { evaluate } from '../expression/evaluator';
+import { parse } from '../expression/parser';
+import type { Expr } from '../expression/types';
+
+export type Specials = Record<string, unknown>;
+
+const resolveValue = (ctx: BindingContext, value: unknown) =>
+  ctx.adapter.isStore(value) ? ctx.adapter.get(value) : value;
+
+export function evaluateExpr(expr: Expr, ctx: BindingContext, specials: Specials = {}) {
+  return evaluate(expr, ctx.scope, specials, value => resolveValue(ctx, value));
+}
+
+export function bindExpression(
+  source: string,
+  ctx: BindingContext,
+  callback: (value: unknown) => void,
+  specials: Specials = {}
+) {
+  const expr = parse(source);
+  const run = () => callback(evaluateExpr(expr, ctx, specials));
+
+  run();
+
+  const deps = collectDependencies(expr, ctx.scope, value => ctx.adapter.isStore(value));
+  for (const dep of deps) {
+    const unsubscribe = ctx.adapter.subscribe(dep, run);
+    ctx.disposers.add(unsubscribe);
+  }
+
+  return run;
+}

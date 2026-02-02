@@ -33,6 +33,12 @@ export function collectDependencies(
         visit(node.object);
         visit(node.index);
         return;
+      case 'array':
+        node.items.forEach(visit);
+        return;
+      case 'object':
+        node.entries.forEach(entry => visit(entry.value));
+        return;
       case 'unary':
         visit(node.arg);
         return;

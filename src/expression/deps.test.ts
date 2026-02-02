@@ -25,4 +25,10 @@ describe('dependency collection', () => {
     const deps = collectDependencies(parse('items[index] + count + count'), scope, isStore);
     expect(deps).toEqual([storeB, storeA]);
   });
+
+  it('collects dependencies inside arrays and objects', () => {
+    const scope = { count: storeA, other: storeB };
+    const deps = collectDependencies(parse('[count, { a: other }]'), scope, isStore);
+    expect(deps).toEqual([storeA, storeB]);
+  });
 });

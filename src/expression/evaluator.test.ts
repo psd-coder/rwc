@@ -34,6 +34,12 @@ describe('expression evaluator', () => {
     expect(evaluate(parse('counter.inc()'), scope)).toBe(3);
   });
 
+  it('evaluates array and object literals', () => {
+    const scope = { foo: 'bar' };
+    expect(evaluate(parse('[1, foo]'), scope)).toEqual([1, 'bar']);
+    expect(evaluate(parse('{ a: 1, b: foo }'), scope)).toEqual({ a: 1, b: 'bar' });
+  });
+
   it('supports special variables and custom value resolution', () => {
     const store = { value: 5 };
     const resolve = (value: unknown) =>

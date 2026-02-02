@@ -118,6 +118,33 @@ class Parser {
       this.expectOp(')');
       return expr;
     }
+    if (token.type === 'op' && token.value === '[') {
+      const items: Expr[] = [];
+      if (!this.peekOp(']')) {
+        do {
+          items.push(this.parseExpression());
+        } while (this.matchOp(','));
+      }
+      this.expectOp(']');
+      return { type: 'array', items };
+    }
+    if (token.type === 'op' && token.value === '{') {
+      const entries: Array<{ key: string; value: Expr }> = [];
+      if (!this.peekOp('}')) {
+        do {
+          const keyToken = this.consume();
+          if (keyToken.type !== 'ident' && keyToken.type !== 'string') {
+            throw this.error('Expected object key', keyToken.pos);
+          }
+          const key = String(keyToken.value);
+          this.expectOp(':');
+          const value = this.parseExpression();
+          entries.push({ key, value });
+        } while (this.matchOp(','));
+      }
+      this.expectOp('}');
+      return { type: 'object', entries };
+    }
     throw this.error(`Unexpected token`, token.pos);
   }
 

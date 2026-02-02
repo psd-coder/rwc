@@ -63,6 +63,25 @@ describe('expression parser', () => {
     });
   });
 
+  it('parses array and object literals', () => {
+    expect(parse('[1, 2, foo]')).toEqual({
+      type: 'array',
+      items: [
+        { type: 'literal', value: 1 },
+        { type: 'literal', value: 2 },
+        { type: 'ident', name: 'foo' }
+      ]
+    });
+
+    expect(parse('{ a: 1, \"b\": foo }')).toEqual({
+      type: 'object',
+      entries: [
+        { key: 'a', value: { type: 'literal', value: 1 } },
+        { key: 'b', value: { type: 'ident', name: 'foo' } }
+      ]
+    });
+  });
+
   it('respects grouping', () => {
     expect(parse('(1 + 2) * 3')).toEqual({
       type: 'binary',
