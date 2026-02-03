@@ -1,6 +1,7 @@
 import type { BindingContext } from '../context';
 import { createBindingContext, createChildContext } from '../context';
 import { bindExpression, evaluateExpr } from './utils';
+import { setupTemplate } from './_utils';
 import { markHydratedNodes } from './hydration';
 import { parse } from '../expression/parser';
 
@@ -32,25 +33,12 @@ export function processFor(
     throw new Error('x-for requires x-key');
   }
   const keyExpr = parse(keyExprSource);
-  const isTemplate = el instanceof HTMLTemplateElement;
-  let template: HTMLTemplateElement;
-  let anchor: ChildNode;
-  let anchorInserted = false;
-
-  if (isTemplate) {
-    template = el;
-    anchor = document.createComment('x-for');
-  } else {
-    const parent = el.parentNode;
-    if (!parent) return;
-    const placeholder = document.createComment('x-for');
-    parent.insertBefore(placeholder, el);
-    el.removeAttribute('x-for');
-    template = document.createElement('template');
-    template.content.append(el);
-    anchor = placeholder;
-    anchorInserted = true;
-  }
+  const templateSetup = setupTemplate(el, 'x-for');
+  if (!templateSetup) return;
+  const { template } = templateSetup;
+  const isTemplate = templateSetup.isTemplate;
+  let anchor: ChildNode = isTemplate ? document.createComment('x-for') : templateSetup.placeholder;
+  let anchorInserted = !isTemplate;
 
   const parent = isTemplate ? template.parentNode : anchor.parentNode;
   if (!parent) return;

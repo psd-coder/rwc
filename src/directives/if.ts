@@ -1,6 +1,7 @@
 import type { BindingContext } from '../context';
 import { createChildContext } from '../context';
 import { bindExpression } from './utils';
+import { setupTemplate } from './_utils';
 
 type MountedBlock = {
   ctx: BindingContext;
@@ -16,9 +17,6 @@ export function processIf(
   processDirectives: DirectiveProcessor,
   portalTargetSelector?: string
 ) {
-  const isTemplate = el instanceof HTMLTemplateElement;
-  let template: HTMLTemplateElement;
-  let anchor: ChildNode;
   let portalTarget: Element | null = null;
 
   if (portalTargetSelector) {
@@ -28,19 +26,10 @@ export function processIf(
     }
   }
 
-  if (isTemplate) {
-    template = el;
-    anchor = el;
-  } else {
-    const parent = el.parentNode;
-    if (!parent) return;
-    const placeholder = document.createComment('x-if');
-    parent.insertBefore(placeholder, el);
-    el.removeAttribute('x-if');
-    template = document.createElement('template');
-    template.content.append(el);
-    anchor = placeholder;
-  }
+  const templateSetup = setupTemplate(el, 'x-if');
+  if (!templateSetup) return;
+  const { template } = templateSetup;
+  const anchor: ChildNode = templateSetup.isTemplate ? template : templateSetup.placeholder;
 
   let mounted: MountedBlock | null = null;
 
