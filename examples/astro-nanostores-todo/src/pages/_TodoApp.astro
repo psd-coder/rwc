@@ -97,11 +97,9 @@ const { $todos, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd,
 
 <script>
     import { atom, computed } from 'nanostores';
-    import { defineComponent, registerAdapter } from '../../../../src/index';
-    import { nanostoresAdapter } from '../../../../src/adapters/nanostores';
+    import { defineComponent } from '../../../../src/index';
+    import { nanostores } from '../../../../src/adapters/nanostores';
     import { getStores, type InitialData, type Filter } from './_store';
-
-    registerAdapter(nanostoresAdapter, { replace: true });
 
     const parseInitial = (value?: string) => {
       if (!value) return null;
@@ -168,7 +166,7 @@ const { $todos, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd,
         clearCompleted,
         setFilter
       };
-    });
+    }, { adapter: nanostores });
   </script>
   <style>
     h1 {

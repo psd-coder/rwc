@@ -1,5 +1,4 @@
 import type { ReactivityAdapter } from './adapters/types';
-import { getAdapter } from './adapters/registry';
 
 export interface ComponentContext {
   host: HTMLElement;
@@ -44,8 +43,11 @@ export function createChildContext(
   return createBindingContext({ ...parent.scope, ...scopeOverrides }, parent.adapter, new Set());
 }
 
-export function createContext(host: HTMLElement, disposers: Set<() => void>): ComponentContext {
-  const adapter = getAdapter();
+export function createContext(
+  host: HTMLElement,
+  disposers: Set<() => void>,
+  adapter: ReactivityAdapter
+): ComponentContext {
   const refs: Record<string, HTMLElement> = {};
 
   const effect = ((storeOrStores: unknown | unknown[], callback: (value: unknown) => void) => {

@@ -1,10 +1,19 @@
 import { collectStaticRefs, createContext, type BindingContext } from './context';
-import { getAdapter } from './adapters/registry';
+import type { ReactivityAdapter } from './adapters/types';
 import { processDirectives } from './directives/registry';
 
 export type SetupFn = (ctx: ReturnType<typeof createContext>) => Record<string, unknown>;
 
-export function defineComponent(name: string, setup: SetupFn) {
+export interface DefineComponentOptions {
+  adapter: ReactivityAdapter;
+}
+
+export function defineComponent(name: string, setup: SetupFn, options: DefineComponentOptions) {
+  const adapter = options?.adapter;
+  if (!adapter) {
+    throw new Error('Adapter is required. Pass { adapter } as the third argument to defineComponent.');
+  }
+
   if (customElements.get(name)) {
     return;
   }
@@ -14,12 +23,12 @@ export function defineComponent(name: string, setup: SetupFn) {
     private cleanup = new Set<() => void>();
 
     connectedCallback() {
-      const componentCtx = createContext(this, this.cleanup);
+      const componentCtx = createContext(this, this.cleanup, adapter);
       queueMicrotask(() => {
         if (!this.isConnected) return;
         collectStaticRefs(this, componentCtx.$refs);
         const scope = setup(componentCtx);
-        this.ctx = { scope: { ...scope, $refs: componentCtx.$refs }, adapter: getAdapter(), disposers: this.cleanup };
+        this.ctx = { scope: { ...scope, $refs: componentCtx.$refs }, adapter, disposers: this.cleanup };
         processDirectives(this, this.ctx, { skipHydrated: true });
       });
     }

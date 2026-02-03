@@ -4,7 +4,7 @@ export type Store<T> = { value: T; subs: Set<(value: T) => void> };
 
 export const createStore = <T,>(value: T): Store<T> => ({ value, subs: new Set() });
 
-export const testAdapter: ReactivityAdapter<Store<unknown>> = {
+export const testReactivity: ReactivityAdapter<Store<unknown>> = {
   isStore: (value): value is Store<unknown> =>
     !!value && typeof value === 'object' && 'value' in value && 'subs' in value,
   get: (store) => store.value,

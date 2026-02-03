@@ -5,7 +5,7 @@ type SpredSignal = {
   subscribe: (listener: (value: unknown) => void) => () => void;
 };
 
-export const spredAdapter: ReactivityAdapter<SpredSignal> = {
+export const spred: ReactivityAdapter<SpredSignal> = {
   isStore(value: unknown): value is SpredSignal {
     return !!value && typeof value === 'object' && 'value' in value && 'subscribe' in value;
   },

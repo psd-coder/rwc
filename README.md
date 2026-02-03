@@ -18,14 +18,12 @@ Install dependencies for local development:
 pnpm install
 ```
 
-Register an adapter and define a component:
+Define a component with an adapter:
 
 ```ts
-import { defineComponent, registerAdapter } from 'rwc';
-import { nanostoresAdapter } from 'rwc/adapters/nanostores';
+import { defineComponent } from 'rwc';
+import { nanostores } from 'rwc/adapters/nanostores';
 import { atom } from 'nanostores';
-
-registerAdapter(nanostoresAdapter);
 
 const $items = atom([{ id: 1, text: 'Ship it' }]);
 const $draft = atom('');
@@ -40,7 +38,7 @@ defineComponent('todo-app', (ctx) => {
   };
 
   return { $items, $draft, add };
-});
+}, { adapter: nanostores });
 ```
 
 ```html
@@ -119,7 +117,7 @@ defineComponent('example', (ctx) => {
     }
   });
   return {};
-});
+}, { adapter: nanostores });
 ```
 
 ## Reactivity adapters
@@ -138,7 +136,7 @@ Built-in adapters:
 - `rwc/adapters/nanostores`
 - `rwc/adapters/spred`
 
-You can also create a custom adapter and register it with `registerAdapter`.
+You can also create a custom adapter and pass it via the `adapter` option to `defineComponent`.
 
 ## Examples
 

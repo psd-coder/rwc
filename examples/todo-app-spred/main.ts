@@ -1,10 +1,8 @@
-import { defineComponent, registerAdapter, spredAdapter } from '../../src/index.ts';
+import { defineComponent } from '../../src/index.ts';
+import { spred } from '../../src/adapters/spred.ts';
 import { signal } from '@spred/core';
 
 type Filter = 'all' | 'active' | 'completed';
-
-// Register spred adapter
-registerAdapter(spredAdapter);
 
 defineComponent('todo-app-spred', (ctx) => {
   // State
@@ -109,4 +107,4 @@ defineComponent('todo-app-spred', (ctx) => {
     clearCompleted,
     setFilter,
   };
-});
+}, { adapter: spred });

@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
-import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
+import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-attr directive', () => {
   it('sets and removes attributes', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const title = createStore<unknown>('hello');
     const tag = nextTag('rwc-attr');
-    defineComponent(tag, () => ({ title }));
+    defineComponent(tag, () => ({ title }), { adapter: testReactivity });
 
     document.body.innerHTML = `<${tag}><div x-attr:title="title"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;

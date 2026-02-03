@@ -1,8 +1,7 @@
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 import { signal } from '@spred/core';
-import { defineComponent, registerAdapter, spredAdapter } from '../../src/index';
-
-registerAdapter(spredAdapter, { replace: true });
+import { defineComponent } from '../../src/index';
+import { spred } from '../../src/adapters/spred';
 
 type Option = { id: string; label: string; code: string };
 
@@ -114,4 +113,4 @@ defineComponent('combo-box', (ctx) => {
     onBlur,
     select
   };
-});
+}, { adapter: spred });

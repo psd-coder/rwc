@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
-import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
+import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-style directive', () => {
   it('sets and removes inline styles', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const color = createStore<unknown>('red');
     const tag = nextTag('rwc-style');
-    defineComponent(tag, () => ({ color }));
+    defineComponent(tag, () => ({ color }), { adapter: testReactivity });
 
     document.body.innerHTML = `<${tag}><div x-style:color="color"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;

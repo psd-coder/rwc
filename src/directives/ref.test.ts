@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
-import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import { nextTag, nextTick, testAdapter } from '../test-utils';
+import { nextTag, nextTick, testReactivity } from '../test-utils';
 
 describe('x-ref directive', () => {
   it('exposes static refs during setup', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const tag = nextTag('rwc-ref-setup');
     defineComponent(tag, (ctx) => {
       (ctx.host as { __ref?: HTMLElement }).__ref = ctx.$refs.field;
       return {};
-    });
+    }, { adapter: testReactivity });
 
     document.body.innerHTML = `<${tag}><input x-ref="field" /></${tag}>`;
     await nextTick();
@@ -24,14 +20,11 @@ describe('x-ref directive', () => {
   });
 
   it('registers and cleans up refs', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const tag = nextTag('rwc-ref');
     defineComponent(tag, (ctx) => {
       (ctx.host as { __ctx?: unknown }).__ctx = ctx;
       return {};
-    });
+    }, { adapter: testReactivity });
 
     document.body.innerHTML = `<${tag}><input x-ref="field" /></${tag}>`;
     await nextTick();

@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
-import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
+import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-portal directive', () => {
   it('moves content to target and cleans up', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const label = createStore('Hello');
     const tag = nextTag('rwc-portal');
-    defineComponent(tag, () => ({ label }));
+    defineComponent(tag, () => ({ label }), { adapter: testReactivity });
 
     document.body.innerHTML = `
       <div id="portal-target"></div>
@@ -36,13 +32,10 @@ describe('x-portal directive', () => {
   });
 
   it('supports portal + if on the same template', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const show = createStore(true);
     const label = createStore('Yo');
     const tag = nextTag('rwc-portal-if');
-    defineComponent(tag, () => ({ show, label }));
+    defineComponent(tag, () => ({ show, label }), { adapter: testReactivity });
 
     document.body.innerHTML = `
       <div id="portal-if-target"></div>
@@ -69,12 +62,9 @@ describe('x-portal directive', () => {
   });
 
   it('supports non-template elements', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const label = createStore('Inline');
     const tag = nextTag('rwc-portal-el');
-    defineComponent(tag, () => ({ label }));
+    defineComponent(tag, () => ({ label }), { adapter: testReactivity });
 
     document.body.innerHTML = `
       <div id="portal-el-target"></div>

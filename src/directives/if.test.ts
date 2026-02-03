@@ -1,17 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
-import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
+import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-if directive', () => {
   it('mounts and disposes nested bindings', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const show = createStore(true);
     const count = createStore(0);
     const tag = nextTag('rwc-if');
-    defineComponent(tag, () => ({ show, count }));
+    defineComponent(tag, () => ({ show, count }), { adapter: testReactivity });
 
     document.body.innerHTML = `<${tag}><template x-if="show"><span x-text="count"></span></template></${tag}>`;
     await nextTick();
@@ -37,13 +33,10 @@ describe('x-if directive', () => {
   });
 
   it('supports non-template elements', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const show = createStore(true);
     const count = createStore(1);
     const tag = nextTag('rwc-if-el');
-    defineComponent(tag, () => ({ show, count }));
+    defineComponent(tag, () => ({ show, count }), { adapter: testReactivity });
 
     document.body.innerHTML = `<${tag}><p class="note" x-if="show"><span x-text="count"></span></p></${tag}>`;
     await nextTick();

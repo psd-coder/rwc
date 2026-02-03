@@ -1,8 +1,6 @@
 import { atom, computed } from 'nanostores';
-import { defineComponent, registerAdapter } from '../../src/index';
-import { nanostoresAdapter } from '../../src/adapters/nanostores';
-
-registerAdapter(nanostoresAdapter, { replace: true });
+import { defineComponent } from '../../src/index';
+import { nanostores } from '../../src/adapters/nanostores';
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -87,4 +85,4 @@ defineComponent('todo-app-nanostores', (ctx) => {
     clearCompleted,
     setFilter
   };
-});
+}, { adapter: nanostores });

@@ -2,28 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { createBindingContext } from '../context';
 import { processFor } from './for';
 import { defineComponent } from '../define';
-import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
+import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-for directive', () => {
   it('requires x-key', () => {
     const template = document.createElement('template');
     template.setAttribute('x-for', 'item in items');
-    const ctx = createBindingContext({ items: [] }, testAdapter);
+    const ctx = createBindingContext({ items: [] }, testReactivity);
 
     expect(() => processFor(template, 'item in items', ctx, () => {})).toThrow(/x-key/);
   });
 
   it('renders and reorders keyed items', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const items = createStore([
       { id: 'a' },
       { id: 'b' }
     ]);
     const tag = nextTag('rwc-for');
-    defineComponent(tag, () => ({ items }));
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
 
     document.body.innerHTML = `
       <${tag}>
@@ -61,15 +57,12 @@ describe('x-for directive', () => {
   });
 
   it('hydrates existing DOM without re-rendering', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const items = createStore([
       { id: 'a', label: 'Alpha' },
       { id: 'b', label: 'Beta' }
     ]);
     const tag = nextTag('rwc-for-hydrate');
-    defineComponent(tag, () => ({ items }));
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
 
     document.body.innerHTML = `
       <${tag}>
@@ -108,15 +101,12 @@ describe('x-for directive', () => {
   });
 
   it('hydrates nodes with directives without double-processing', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const items = createStore([
       { id: 'a', label: 'Alpha', done: true },
       { id: 'b', label: 'Beta', done: false }
     ]);
     const tag = nextTag('rwc-for-hydrate-directives');
-    defineComponent(tag, () => ({ items }));
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
 
     document.body.innerHTML = `
       <${tag}>
@@ -156,12 +146,9 @@ describe('x-for directive', () => {
   });
 
   it('supports non-template elements', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const items = createStore(['a', 'b']);
     const tag = nextTag('rwc-for-el');
-    defineComponent(tag, () => ({ items }));
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
 
     document.body.innerHTML = `
       <${tag}>

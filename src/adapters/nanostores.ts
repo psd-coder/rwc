@@ -5,7 +5,7 @@ type NanoStore = {
   subscribe: (listener: (value: unknown) => void) => () => void;
 };
 
-export const nanostoresAdapter: ReactivityAdapter<NanoStore> = {
+export const nanostores: ReactivityAdapter<NanoStore> = {
   isStore(value: unknown): value is NanoStore {
     return !!value && typeof value === 'object' && 'subscribe' in value && 'get' in value;
   },

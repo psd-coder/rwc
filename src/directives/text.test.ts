@@ -1,17 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
-import { registerAdapter, resetAdapterForTests } from '../adapters/registry';
-import { createStore, nextTag, nextTick, setStore, testAdapter } from '../test-utils';
+import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-text directive', () => {
   it('renders and updates text content', async () => {
-    resetAdapterForTests();
-    registerAdapter(testAdapter);
-
     const count = createStore(1);
-
     const tag = nextTag('rwc-text');
-    defineComponent(tag, () => ({ count }));
+    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
 
     document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
 
