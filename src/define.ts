@@ -20,7 +20,7 @@ export function defineComponent(name: string, setup: SetupFn) {
         collectStaticRefs(this, componentCtx.$refs);
         const scope = setup(componentCtx);
         this.ctx = { scope: { ...scope, $refs: componentCtx.$refs }, adapter: getAdapter(), disposers: this.cleanup };
-        processDirectives(this, this.ctx);
+        processDirectives(this, this.ctx, { skipHydrated: true });
       });
     }
 

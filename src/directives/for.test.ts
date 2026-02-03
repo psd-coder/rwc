@@ -107,6 +107,54 @@ describe('x-for directive', () => {
     expect(reordered[1]).toBe(nodeA);
   });
 
+  it('hydrates nodes with directives without double-processing', async () => {
+    resetAdapterForTests();
+    registerAdapter(testAdapter);
+
+    const items = createStore([
+      { id: 'a', label: 'Alpha', done: true },
+      { id: 'b', label: 'Beta', done: false }
+    ]);
+    const tag = nextTag('rwc-for-hydrate-directives');
+    defineComponent(tag, () => ({ items }));
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items" x-key="item.id">
+            <li>
+              <input type="checkbox" x-prop:checked="item.done">
+              <span x-text="item.label"></span>
+            </li>
+          </template>
+          <li data-id="a">
+            <input type="checkbox" x-prop:checked="item.done" checked>
+            <span x-text="item.label">Alpha</span>
+          </li>
+          <li data-id="b">
+            <input type="checkbox" x-prop:checked="item.done">
+            <span x-text="item.label">Beta</span>
+          </li>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    const nodeA = list.querySelector('li[data-id="a"]') as HTMLLIElement;
+    const nodeB = list.querySelector('li[data-id="b"]') as HTMLLIElement;
+    const inputA = nodeA.querySelector('input') as HTMLInputElement;
+    const inputB = nodeB.querySelector('input') as HTMLInputElement;
+    const spanA = nodeA.querySelector('span') as HTMLSpanElement;
+    const spanB = nodeB.querySelector('span') as HTMLSpanElement;
+
+    expect(spanA.textContent).toBe('Alpha');
+    expect(spanB.textContent).toBe('Beta');
+    expect(inputA.checked).toBe(true);
+    expect(inputB.checked).toBe(false);
+  });
+
   it('supports non-template elements', async () => {
     resetAdapterForTests();
     registerAdapter(testAdapter);

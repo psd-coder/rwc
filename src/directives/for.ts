@@ -1,6 +1,7 @@
 import type { BindingContext } from '../context';
 import { createBindingContext, createChildContext } from '../context';
 import { bindExpression, evaluateExpr } from './utils';
+import { markHydratedNodes } from './hydration';
 import { parse } from '../expression/parser';
 
 type ForParts = {
@@ -189,6 +190,7 @@ export function processFor(
       const key = evaluateKey(scopeOverrides);
       const entry = createEntry(items[index], index, scopeOverrides, key, nodes);
       entries.set(entry.key, entry);
+      markHydratedNodes(nodes);
     });
 
     ensureAnchor(lastNode);

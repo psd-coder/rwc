@@ -1,3 +1,4 @@
 .artifacts
+.astro
 node_modules
 .pnpm-store
