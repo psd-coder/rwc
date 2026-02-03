@@ -61,6 +61,7 @@ export function tokenize(input: string): Token[] {
       const start = i;
       i += 1;
       let value = '';
+      let terminated = false;
       while (i < input.length) {
         const current = input[i];
         if (current === '\\') {
@@ -96,12 +97,13 @@ export function tokenize(input: string): Token[] {
         if (current === quote) {
           i += 1;
           push('string', value, start);
+          terminated = true;
           break;
         }
         value += current;
         i += 1;
       }
-      if (i > input.length) {
+      if (!terminated && i >= input.length) {
         throw new Error(`Unterminated string at ${start}`);
       }
       continue;
