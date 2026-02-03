@@ -33,4 +33,26 @@ describe('x-class directive', () => {
     setStore(visible, false);
     expect(div.classList.contains('highlight')).toBe(false);
   });
+
+  it('keeps base classes stable across x-for rebinds', async () => {
+    const todos = createStore([{ id: 1, completed: false }]);
+    const tag = nextTag('rwc-class-for');
+    defineComponent(tag, () => ({ todos }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><template x-for="todo in todos" x-key="todo.id"><span class="todo-text" x-class="{ completed: todo.completed }"></span></template></${tag}>`;
+    await nextTick();
+
+    let span = document.querySelector(`${tag} .todo-text`) as HTMLSpanElement;
+    expect(span.classList.contains('completed')).toBe(false);
+
+    setStore(todos, [{ id: 1, completed: true }]);
+    await nextTick();
+    span = document.querySelector(`${tag} .todo-text`) as HTMLSpanElement;
+    expect(span.classList.contains('completed')).toBe(true);
+
+    setStore(todos, [{ id: 1, completed: false }]);
+    await nextTick();
+    span = document.querySelector(`${tag} .todo-text`) as HTMLSpanElement;
+    expect(span.classList.contains('completed')).toBe(false);
+  });
 });
