@@ -6,12 +6,32 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsup",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters/nanostores": {
+      "types": "./dist/adapters/nanostores.d.ts",
+      "import": "./dist/adapters/nanostores.js"
+    },
+    "./adapters/spred": {
+      "types": "./dist/adapters/spred.d.ts",
+      "import": "./dist/adapters/spred.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "clsx": "^2.1.1"
   },
@@ -30,6 +50,8 @@
   "devDependencies": {
     "@floating-ui/dom": "^1.7.5",
     "happy-dom": "^20.4.0",
+    "terser": "^5.46.0",
+    "tsup": "^8.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
