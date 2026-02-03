@@ -1,40 +1,9 @@
 ---
-type Filter = 'all' | 'active' | 'completed';
+import { getStores, DEFAULT_STATE } from "./_store";
 
-type TodoItem = {
-  id: number;
-  text: string;
-  completed: boolean;
-};
-
-const initialTodos: TodoItem[] = [
-  { id: 1, text: 'Draft component API', completed: true },
-  { id: 2, text: 'Build directive tests', completed: false }
-];
-const initialFilter = 'all' as Filter;
-
-const activeTodos = initialTodos.filter((todo) => !todo.completed);
-const completedTodos = initialTodos.filter((todo) => todo.completed);
-
-const filteredTodos =
-  initialFilter === 'active'
-    ? activeTodos
-    : initialFilter === 'completed'
-      ? completedTodos
-      : initialTodos;
-
-const emptyMessage =
-  initialFilter === 'active'
-    ? 'No active todos.'
-    : initialFilter === 'completed'
-      ? 'No completed todos.'
-      : 'No todos yet.';
-
-const initialData = { todos: initialTodos, filter: initialFilter };
-const canAdd = false;
-const activeNoun = activeTodos.length === 1 ? 'item' : 'items';
+const { $todos, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd, $emptyMessage } = getStores(DEFAULT_STATE);
 ---
-<todo-nanostores x-cloak data-initial={JSON.stringify(initialData)}>
+<todo-nanostores x-cloak data-initial={JSON.stringify(DEFAULT_STATE)}>
       <h1>📝 Todo App — Astro</h1>
 
       <div class="add-todo">
@@ -44,35 +13,35 @@ const activeNoun = activeTodos.length === 1 ? 'item' : 'items';
           x-prop:value="$newTodo"
           x-on:input="onInput($event)"
           placeholder="What needs to be done?">
-        <button class="btn-add" x-on:click="addTodo()" x-prop:disabled="!$canAdd" disabled={!canAdd}>
+        <button class="btn-add" x-on:click="addTodo()" x-prop:disabled="!$canAdd" disabled={!$canAdd.get()}>
           Add
         </button>
       </div>
 
       <div class="filters">
         <button
-          class={`filter-btn${initialFilter === 'all' ? ' active' : ''}`}
+          class={`filter-btn${$filter.get() === 'all' ? ' active' : ''}`}
           x-class:active="$filter === 'all'"
           x-on:click="setFilter('all')">
-          All (<span x-text="$todos.length">{initialTodos.length}</span>)
+          All (<span x-text="$todos.length">{$todos.get().length}</span>)
         </button>
         <button
-          class={`filter-btn${initialFilter === 'active' ? ' active' : ''}`}
+          class={`filter-btn${$filter.get() === 'active' ? ' active' : ''}`}
           x-class:active="$filter === 'active'"
           x-on:click="setFilter('active')">
-          Active (<span x-text="$activeTodos.length">{activeTodos.length}</span>)
+          Active (<span x-text="$activeTodos.length">{$activeTodos.get().length}</span>)
         </button>
         <button
-          class={`filter-btn${initialFilter === 'completed' ? ' active' : ''}`}
+          class={`filter-btn${$filter.get() === 'completed' ? ' active' : ''}`}
           x-class:active="$filter === 'completed'"
           x-on:click="setFilter('completed')">
-          Completed (<span x-text="$completedTodos.length">{completedTodos.length}</span>)
+          Completed (<span x-text="$completedTodos.length">{$completedTodos.get().length}</span>)
         </button>
       </div>
 
       <template x-if="$filteredTodos.length === 0">
         <div class="empty-state">
-          <p x-text="$emptyMessage">{emptyMessage}</p>
+          <p x-text="$emptyMessage">{$emptyMessage.get()}</p>
         </div>
       </template>
 
@@ -90,7 +59,7 @@ const activeNoun = activeTodos.length === 1 ? 'item' : 'items';
             </button>
           </li>
         </template>
-        {filteredTodos.map((todo) => (
+        {$filteredTodos.get().map((todo) => (
           <li class="todo-item">
             <input
               type="checkbox"
@@ -113,8 +82,8 @@ const activeNoun = activeTodos.length === 1 ? 'item' : 'items';
 
       <div class="stats" x-show="$todos.length > 0">
         <span>
-          <span x-text="$activeTodos.length">{activeTodos.length}</span>
-          <span x-text="$activeTodos.length === 1 ? 'item' : 'items'">{activeNoun}</span>
+          <span x-text="$activeTodos.length">{$activeTodos.get().length}</span>
+          <span x-text="$activeTodos.length === 1 ? 'item' : 'items'">{$activeTodos.get().length === 1 ? 'item' : 'items'}</span>
           left
         </span>
         <button
@@ -130,26 +99,9 @@ const activeNoun = activeTodos.length === 1 ? 'item' : 'items';
     import { atom, computed } from 'nanostores';
     import { defineComponent, registerAdapter } from '../../../../src/index';
     import { nanostoresAdapter } from '../../../../src/adapters/nanostores';
+    import { getStores, type InitialData, type Filter } from './_store';
 
     registerAdapter(nanostoresAdapter, { replace: true });
-
-    type Filter = 'all' | 'active' | 'completed';
-
-    type TodoItem = {
-      id: number;
-      text: string;
-      completed: boolean;
-    };
-
-    type InitialData = {
-      todos: TodoItem[];
-      filter: Filter;
-    };
-
-    const DEFAULT_TODOS: TodoItem[] = [
-      { id: 1, text: 'Draft component API', completed: true },
-      { id: 2, text: 'Build directive tests', completed: false }
-    ];
 
     const parseInitial = (value?: string) => {
       if (!value) return null;
@@ -162,24 +114,7 @@ const activeNoun = activeTodos.length === 1 ? 'item' : 'items';
 
     defineComponent('todo-nanostores', (ctx) => {
       const initial = parseInitial(ctx.host.dataset.initial);
-      const $todos = atom<TodoItem[]>(initial?.todos ?? DEFAULT_TODOS);
-      const $newTodo = atom('');
-      const $filter = atom<Filter>(initial?.filter ?? 'all');
-
-      const $activeTodos = computed($todos, (todos) => todos.filter((todo) => !todo.completed));
-      const $completedTodos = computed($todos, (todos) => todos.filter((todo) => todo.completed));
-      const $filteredTodos = computed([$todos, $filter], (todos, filter) => {
-        if (filter === 'active') return todos.filter((todo) => !todo.completed);
-        if (filter === 'completed') return todos.filter((todo) => todo.completed);
-        return todos;
-      });
-      const $canAdd = computed($newTodo, (value) => value.trim().length > 0);
-      const $emptyMessage = computed($filter, (filter) => {
-        if (filter === 'active') return 'No active todos.';
-        if (filter === 'completed') return 'No completed todos.';
-        return 'No todos yet.';
-      });
-
+      const { $todos, $newTodo, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd, $emptyMessage } = getStores(initial);
       const onInput = (event: Event) => {
         const target = event.target as HTMLInputElement | null;
         $newTodo.set(target?.value ?? '');
