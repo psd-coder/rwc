@@ -1,8 +1,8 @@
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
-import { defineComponent, registerAdapter } from '../../src/index';
-import { localAdapter, signal } from '../shared/store';
+import { signal } from '@spred/core';
+import { defineComponent, registerAdapter, spredAdapter } from '../../src/index';
 
-registerAdapter(localAdapter, { replace: true });
+registerAdapter(spredAdapter, { replace: true });
 
 type Option = { id: string; label: string; code: string };
 

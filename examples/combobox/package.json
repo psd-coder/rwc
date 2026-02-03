@@ -1,0 +1,14 @@
+{
+  "name": "rwc-todo-app-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@spred/core": "^0.41.5"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
+}

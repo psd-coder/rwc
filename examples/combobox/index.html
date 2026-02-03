@@ -1,52 +1,42 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>rwc - Combobox Example</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <combo-box class="page">
-      <header class="header">
-        <h1>Combobox</h1>
-        <p>Floating UI positioned dropdown via x-portal.</p>
-      </header>
 
-      <div class="field">
-        <input
-          x-ref="input"
-          type="text"
-          placeholder="Search countries"
-          autocomplete="off"
-          x-prop:value="query"
-          x-on:focus="open"
-          x-on:input="onInput($event)"
-          x-on:blur="onBlur" />
-        <button class="toggle" x-on:click="toggle">Toggle</button>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rwc - Combobox Example</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
 
-      <p class="selection">
-        Selected:
-        <strong x-text="selected.label || 'None'"></strong>
-      </p>
+<body>
+  <combo-box class="app">
+    <header class="header">
+      <h1>Combobox</h1>
+      <p>Floating UI positioned dropdown via x-portal.</p>
+    </header>
 
-      <div
-        class="dropdown"
-        x-portal="body"
-        x-if="isOpen"
-        x-attr:data-dropdown-for="hostId"
-        x-style:top="dropdownStyle.top"
-        x-style:left="dropdownStyle.left"
-        x-style:width="dropdownStyle.width">
-        <button class="option" x-on:click="select(option)" x-for="option in filtered" x-key="option.id">
-          <span class="label" x-text="option.label"></span>
-          <span class="code" x-text="option.code"></span>
-        </button>
-        <p class="empty" x-show="filtered.length === 0">No matches.</p>
-      </div>
-    </combo-box>
+    <div class="field">
+      <input x-ref="input" type="text" placeholder="Search countries" autocomplete="off" x-prop:value="query"
+        x-on:focus="open" x-on:input="onInput($event)" x-on:blur="onBlur" />
+      <button class="toggle" x-on:click="toggle">Toggle</button>
+    </div>
 
-    <script type="module" src="./main.ts"></script>
-  </body>
+    <p class="selection">
+      Selected:
+      <strong x-text="selected.label || 'None'"></strong>
+    </p>
+
+    <div class="dropdown" x-portal="body" x-if="isOpen" x-attr:data-dropdown-for="hostId"
+      x-style:top="dropdownStyle.top" x-style:left="dropdownStyle.left" x-style:width="dropdownStyle.width">
+      <button class="option" x-on:click="select(option)" x-for="option in filtered" x-key="option.id">
+        <span class="label" x-text="option.label"></span>
+        <span class="code" x-text="option.code"></span>
+      </button>
+      <p class="empty" x-show="filtered.length === 0">No matches.</p>
+    </div>
+  </combo-box>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+
 </html>
