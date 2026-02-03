@@ -49,4 +49,22 @@ describe('expression evaluator', () => {
     expect(evaluate(parse('$event.detail'), {}, specials)).toBe(9);
     expect(evaluate(parse('count + 1'), { count: store }, {}, resolve)).toBe(6);
   });
+
+  it('prefers store methods on call targets before unwrapping values', () => {
+    const store = {
+      value: ['a'],
+      set(next: string[]) {
+        this.value = next;
+      }
+    };
+    const isStore = (value: unknown): value is typeof store =>
+      !!value && typeof value === 'object' && 'value' in value && 'set' in value;
+    const resolve = (value: unknown) => (isStore(value) ? value.value : value);
+
+    evaluate(parse('list.set(["b"])'), { list: store }, {}, resolve, isStore);
+    expect(store.value).toEqual(['b']);
+
+    evaluate(parse('list.push("c")'), { list: store }, {}, resolve, isStore);
+    expect(store.value).toEqual(['b', 'c']);
+  });
 });

@@ -10,7 +10,13 @@ const resolveValue = (ctx: BindingContext, value: unknown) =>
   ctx.adapter.isStore(value) ? ctx.adapter.get(value) : value;
 
 export function evaluateExpr(expr: Expr, ctx: BindingContext, specials: Specials = {}) {
-  return evaluate(expr, ctx.scope, specials, value => resolveValue(ctx, value));
+  return evaluate(
+    expr,
+    ctx.scope,
+    specials,
+    value => resolveValue(ctx, value),
+    value => ctx.adapter.isStore(value)
+  );
 }
 
 export function bindExpression(
