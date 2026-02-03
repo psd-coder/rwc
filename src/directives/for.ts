@@ -186,14 +186,29 @@ export function processFor(
 
   const update = (value: unknown) => {
     const items = Array.isArray(value) ? value : [];
-    hydrateEntries(items);
     const nextKeys = new Set<unknown>();
     const ordered: Entry[] = [];
+    const keyedItems: Array<{
+      item: unknown;
+      index: number;
+      scopeOverrides: Record<string, unknown>;
+      key: unknown;
+    }> = [];
 
     items.forEach((item, index) => {
       const scopeOverrides = createScopeOverrides(item, index);
       const key = evaluateKey(scopeOverrides);
+      if (nextKeys.has(key)) {
+        const keyLabel = typeof key === 'string' ? `"${key}"` : String(key);
+        throw new Error(`x-for requires unique keys. Duplicate key ${keyLabel} from x-key="${keyExprSource}".`);
+      }
       nextKeys.add(key);
+      keyedItems.push({ item, index, scopeOverrides, key });
+    });
+
+    hydrateEntries(items);
+
+    keyedItems.forEach(({ item, index, scopeOverrides, key }) => {
       let entry = entries.get(key);
 
       if (!entry) {

@@ -145,6 +145,29 @@ describe('x-for directive', () => {
     expect(inputB.checked).toBe(false);
   });
 
+  it('throws on duplicate keys', async () => {
+    const items = createStore([
+      { id: 'a' },
+      { id: 'b' }
+    ]);
+    const tag = nextTag('rwc-for-dup');
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items" x-key="item.id">
+            <li x-text="item.id"></li>
+          </template>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+
+    expect(() => setStore(items, [{ id: 'a' }, { id: 'a' }])).toThrow(/duplicate key/i);
+  });
+
   it('supports non-template elements', async () => {
     const items = createStore(['a', 'b']);
     const tag = nextTag('rwc-for-el');
