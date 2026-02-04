@@ -102,6 +102,100 @@ describe('x-if directive', () => {
     expect(document.querySelector(`${tag} .nested`)).toBeNull();
   });
 
+  it('binds x-text and x-attr on the same element as x-if', async () => {
+    const show = createStore(true);
+    const name = createStore('Alice');
+    const title = createStore('greeting');
+    const tag = nextTag('rwc-if-codir-text-attr');
+    defineComponent(tag, () => ({ show, name, title }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><span x-if="show" x-text="name" x-attr:title="title"></span></${tag}>`;
+    await nextTick();
+
+    let span = document.querySelector(`${tag} span`) as HTMLSpanElement;
+    expect(span.textContent).toBe('Alice');
+    expect(span.getAttribute('title')).toBe('greeting');
+
+    // both directives react while mounted
+    setStore(name, 'Bob');
+    setStore(title, 'farewell');
+    expect(span.textContent).toBe('Bob');
+    expect(span.getAttribute('title')).toBe('farewell');
+
+    // unmount disposes both subscriptions
+    setStore(show, false);
+    expect(document.querySelector(`${tag} span`)).toBeNull();
+    expect(name.subs.size).toBe(0);
+    expect(title.subs.size).toBe(0);
+
+    // re-mount picks up current values
+    setStore(name, 'Carol');
+    setStore(show, true);
+    span = document.querySelector(`${tag} span`) as HTMLSpanElement;
+    expect(span.textContent).toBe('Carol');
+    expect(span.getAttribute('title')).toBe('farewell');
+  });
+
+  it('binds x-class on the same element as x-if, preserving base classes across re-mounts', async () => {
+    const show = createStore(true);
+    const active = createStore(true);
+    const tag = nextTag('rwc-if-codir-class');
+    defineComponent(tag, () => ({ show, active }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div class="card" x-if="show" x-class:active="active"></div></${tag}>`;
+    await nextTick();
+
+    let div = document.querySelector(`${tag} div`) as HTMLDivElement;
+    expect(div.classList.contains('card')).toBe(true);
+    expect(div.classList.contains('active')).toBe(true);
+
+    setStore(active, false);
+    expect(div.classList.contains('active')).toBe(false);
+
+    // unmount + re-mount: each mount starts from a fresh template clone that has class="card"
+    setStore(show, false);
+    expect(document.querySelector(`${tag} div`)).toBeNull();
+
+    setStore(show, true);
+    div = document.querySelector(`${tag} div`) as HTMLDivElement;
+    expect(div.classList.contains('card')).toBe(true);
+    expect(div.classList.contains('active')).toBe(false);
+  });
+
+  it('binds x-on on the same element as x-if, disposing the listener on unmount', async () => {
+    const show = createStore(true);
+    const count = createStore(0);
+    const tag = nextTag('rwc-if-codir-on');
+    defineComponent(tag, () => ({
+      show,
+      count,
+      inc() { setStore(count, count.value + 1); }
+    }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><button x-if="show" x-on:click="inc" x-text="count"></button></${tag}>`;
+    await nextTick();
+
+    let btn = document.querySelector(`${tag} button`) as HTMLButtonElement;
+    expect(btn.textContent).toBe('0');
+    btn.click();
+    expect(count.value).toBe(1);
+    expect(btn.textContent).toBe('1');
+
+    // unmount removes the listener; clicking the detached node is inert
+    const detached = btn;
+    setStore(show, false);
+    expect(document.querySelector(`${tag} button`)).toBeNull();
+    detached.click();
+    expect(count.value).toBe(1);
+
+    // re-mount attaches a fresh listener
+    setStore(show, true);
+    btn = document.querySelector(`${tag} button`) as HTMLButtonElement;
+    expect(btn.textContent).toBe('1');
+    btn.click();
+    expect(count.value).toBe(2);
+  });
+
   it('supports non-template elements', async () => {
     const show = createStore(true);
     const count = createStore(1);

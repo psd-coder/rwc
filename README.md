@@ -102,7 +102,12 @@ Conditionally mounts or unmounts a block. Works on `<template>` (can have multip
 <p x-if="showNote">A note</p>
 ```
 
-Can be combined with `x-portal` on the same element — see [x-portal](#x-portal).
+When used on a plain element, every other directive on that element (`x-text`, `x-attr`, `x-on`, `x-class`, etc.) is processed on each mount and fully disposed on unmount. A fresh clone is made from the original element on every re-mount, so static attributes like `class` are restored automatically:
+
+```html
+<span x-if="show" x-text="name" x-class:highlight="isHighlighted"></span>
+<button x-if="show" x-on:click="save" x-attr:disabled="isSaving">Save</button>
+```
 
 ### x-for
 
