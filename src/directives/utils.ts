@@ -45,4 +45,33 @@ export function bindExpression(
   return run;
 }
 
+export function bindExpressionRaw(
+  source: string,
+  ctx: BindingContext,
+  callback: (value: unknown) => void,
+  specials: Specials = {}
+) {
+  const expr = parse(source);
+  let lastValue: unknown = bindExpressionUninitialized;
+  const run = () => {
+    const nextValue =
+      expr.type === 'ident'
+        ? (expr.name in specials ? specials[expr.name] : ctx.scope[expr.name])
+        : evaluateExpr(expr, ctx, specials);
+    if (Object.is(lastValue, nextValue)) return;
+    lastValue = nextValue;
+    callback(nextValue);
+  };
+
+  run();
+
+  const deps = collectDependencies(expr, ctx.scope, value => ctx.adapter.isStore(value));
+  for (const dep of deps) {
+    const unsubscribe = ctx.adapter.subscribe(dep, run);
+    ctx.disposers.add(unsubscribe);
+  }
+
+  return run;
+}
+
 const bindExpressionUninitialized = Symbol('bindExpressionUninitialized');

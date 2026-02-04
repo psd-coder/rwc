@@ -1,5 +1,5 @@
 import type { BindingContext } from '../context';
-import { bindExpression } from './utils';
+import { bindExpression, bindExpressionRaw } from './utils';
 
 export function processProp(el: Element, exprSource: string, ctx: BindingContext, attrName: string) {
   const prop = attrName.slice('x-prop:'.length);
@@ -7,7 +7,8 @@ export function processProp(el: Element, exprSource: string, ctx: BindingContext
     throw new Error('x-prop requires a name');
   }
 
-  bindExpression(exprSource, ctx, (value) => {
+  const bind = el.tagName.includes('-') ? bindExpressionRaw : bindExpression;
+  bind(exprSource, ctx, (value) => {
     const element = el as unknown as Record<string, unknown>;
     element[prop] = value;
   });

@@ -1,14 +1,19 @@
-import { collectStaticRefs, createContext, type BindingContext } from './context';
+import { collectStaticRefs, createContext, setupProps, type BindingContext, type ComponentContext } from './context';
 import type { ReactivityAdapter } from './adapters/types';
 import { processDirectives } from './directives/registry';
 
-export type SetupFn = (ctx: ReturnType<typeof createContext>) => Record<string, unknown>;
+export type SetupFn<P extends Record<string, unknown> = {}> = (ctx: ComponentContext<P>) => Record<string, unknown>;
 
-export interface DefineComponentOptions {
+export interface DefineComponentOptions<P extends Record<string, unknown> = {}> {
   adapter: ReactivityAdapter;
+  props?: Array<keyof P & string>;
 }
 
-export function defineComponent(name: string, setup: SetupFn, options: DefineComponentOptions) {
+export function defineComponent<P extends Record<string, unknown> = {}>(
+  name: string,
+  setup: SetupFn<P>,
+  options: DefineComponentOptions<P>
+) {
   const adapter = options?.adapter;
   if (!adapter) {
     throw new Error('Adapter is required. Pass { adapter } as the third argument to defineComponent.');
@@ -23,14 +28,37 @@ export function defineComponent(name: string, setup: SetupFn, options: DefineCom
     private cleanup = new Set<() => void>();
 
     connectedCallback() {
-      const componentCtx = createContext(this, this.cleanup, adapter);
-      queueMicrotask(() => {
+      const componentCtx = createContext<P>(this, this.cleanup, adapter);
+      const init = (allowDefer: boolean) => {
         if (!this.isConnected) return;
+        let ancestor = this.parentElement;
+        let hasComponentParent = false;
+        while (ancestor) {
+          if (ancestor.tagName.includes('-')) {
+            hasComponentParent = true;
+            break;
+          }
+          ancestor = ancestor.parentElement;
+        }
+        if (allowDefer && hasComponentParent && options.props?.length) {
+          const element = this as Record<string, unknown>;
+          const pendingProps = options.props.some(
+            (prop) => element[prop] === undefined && this.hasAttribute(`x-prop:${prop}`)
+          );
+          if (pendingProps) {
+            queueMicrotask(() => init(false));
+            return;
+          }
+        }
         collectStaticRefs(this, componentCtx.$refs);
+        if (options.props) {
+          setupProps(this, componentCtx.props, options.props, adapter);
+        }
         const scope = setup(componentCtx);
         this.ctx = { scope: { ...scope, $refs: componentCtx.$refs }, adapter, disposers: this.cleanup };
-        processDirectives(this, this.ctx, { skipHydrated: true });
-      });
+        processDirectives(this, this.ctx, { skipHydrated: true, skipRoot: hasComponentParent });
+      };
+      queueMicrotask(() => init(true));
     }
 
     disconnectedCallback() {

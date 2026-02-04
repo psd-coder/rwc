@@ -15,7 +15,7 @@ import { processText } from './text';
 import { clearHydrationMarks, isHydratedElement } from './hydration';
 
 type DirectiveHandler = (el: Element, value: string, ctx: BindingContext, attrName: string) => void;
-type ProcessOptions = { skipHydrated?: boolean };
+type ProcessOptions = { skipHydrated?: boolean; skipRoot?: boolean };
 
 const handlers: Record<string, DirectiveHandler> = {
   'x-text': (el, value, ctx) => processText(el, value, ctx),
@@ -37,10 +37,13 @@ const prefixHandlers: Array<{ prefix: string; handler: DirectiveHandler }> = [
 ];
 
 export function processDirectives(root: ParentNode, ctx: BindingContext, options: ProcessOptions = {}) {
-  const { skipHydrated = false } = options;
+  const { skipHydrated = false, skipRoot = false } = options;
   const elements: Element[] = [];
   if (root instanceof Element) {
-    elements.push(root, ...Array.from(root.querySelectorAll('*')));
+    if (!skipRoot) {
+      elements.push(root);
+    }
+    elements.push(...Array.from(root.querySelectorAll('*')));
   } else {
     elements.push(...Array.from(root.querySelectorAll('*')));
   }
@@ -113,6 +116,9 @@ export function processDirectives(root: ParentNode, ctx: BindingContext, options
       }
     }
 
+    if (el.tagName.includes('-') && (!(root instanceof Element) || el !== root)) {
+      skipRoots.push(el);
+    }
   }
 
   if (skipHydrated) {

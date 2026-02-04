@@ -21,7 +21,7 @@ export const setStore = <T,>(store: Store<T>, value: T) => {
   for (const sub of store.subs) sub(value);
 };
 
-export const nextTick = () => Promise.resolve();
+export const nextTick = () => Promise.resolve().then(() => Promise.resolve());
 
 export const nextTag = (() => {
   let id = 0;
