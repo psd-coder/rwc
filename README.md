@@ -4,21 +4,19 @@ RWC is a small reactive web components library with a directive-based templating
 
 ## Features
 
-- Web components with a tiny setup API
-- Directive-driven templates (x-text, x-for, x-if, x-on, etc.)
-- Pluggable reactivity adapters
-- SSR-friendly: can hydrate existing DOM for x-for
-- Avoids redundant DOM writes when values are unchanged (Object.is)
+- Web components with a minimal setup API (`defineComponent`)
+- Directive-driven templates (`x-text`, `x-for`, `x-if`, `x-on`, etc.)
+- Pluggable reactivity adapters (nanostores, spred, or custom)
+- SSR-friendly: `x-for` can hydrate server-rendered lists
+- Skips redundant DOM writes via `Object.is` equality checks
 
 ## Quick start
-
-Install dependencies for local development:
 
 ```bash
 pnpm install
 ```
 
-Define a component with an adapter:
+Define a component:
 
 ```ts
 import { defineComponent } from 'rwc';
@@ -32,7 +30,7 @@ defineComponent('todo-app', (ctx) => {
   const add = () => {
     const value = $draft.get().trim();
     if (!value) return;
-   $items.set([...$items.get(), { id: Date.now(), text: value }]);
+    $items.set([...$items.get(), { id: Date.now(), text: value }]);
     $draft.set('');
     ctx.$refs.input?.focus();
   };
@@ -41,38 +39,74 @@ defineComponent('todo-app', (ctx) => {
 }, { adapter: nanostores });
 ```
 
+Wire it up in HTML:
+
 ```html
 <todo-app>
   <input x-ref="input" x-prop:value="$draft" x-on:input="$draft.set($event.target.value)" />
   <button x-on:click="add">Add</button>
 
   <ul>
-    <li x-for="item in $items" x-key="item.id">
-      <span x-text="item.text"></span>
-    </li>
+    <template x-for="item in $items" x-key="item.id">
+      <li x-text="item.text"></li>
+    </template>
   </ul>
 </todo-app>
 ```
 
+`setup` receives a context object and must return a plain object. Every key in that object becomes part of the expression scope — accessible from any directive inside the component.
+
+## Context API
+
+| Property / method | Description |
+|---|---|
+| `ctx.host` | The component's host element |
+| `ctx.$refs` | Static element references collected before `setup` runs — see [x-ref](#x-ref) |
+| `ctx.on(target, event, listener, options?)` | Adds an event listener with automatic cleanup on disconnect. `target` can be a single `EventTarget` or an array |
+| `ctx.effect(store, cb)` | Subscribes to a single store. `cb` is called immediately with the current value and on every subsequent change |
+| `ctx.effect([stores], cb)` | Subscribes to multiple stores. `cb` receives an array of all current values, called initially and whenever any store changes |
+| `ctx.dispatch(name, detail?, options?)` | Emits a `CustomEvent` on `ctx.host`. Defaults to `bubbles: true, cancelable: true` |
+| `ctx.getElement(selector)` | Returns the first matching descendant. Throws if nothing matches |
+| `ctx.getElements(selector)` | Returns all matching descendants (empty array if none) |
+| `ctx.registerCleanup(fn)` | Registers a function to run when the component disconnects |
+
 ## Directives
 
-- `x-text="expr"` - set text content
-- `x-html="expr"` - set inner HTML
-- `x-if="expr"` - conditionally render; works on `template` or normal elements
-- `x-for="item in items"` - list rendering; **requires** `x-key`
-- `x-show="expr"` - toggle display
-- `x-ref="name"` - register element in `ctx.$refs`
-- `x-portal="selector"` - render into another DOM target
-- `x-on:event="handler"` - event listener
-- `x-attr:name="expr"` - set attributes
-- `x-prop:name="expr"` - set properties
-- `x-class:name="expr"` or `x-class="expr"` - toggle or set class
-- `x-style:name="expr"` - set inline styles
-- `x-cloak` - removes itself on init
+### x-text
 
-### x-for + x-key
+Sets `textContent`. `null`/`undefined` render as empty string.
 
-`x-for` requires `x-key` and uses it to keep DOM nodes stable:
+```html
+<span x-text="item.name"></span>
+<span x-text="count * 2"></span>
+```
+
+### x-html
+
+Sets `innerHTML`. `null`/`undefined` render as empty string. Only use with trusted content.
+
+```html
+<div x-html="markupString"></div>
+```
+
+### x-if
+
+Conditionally mounts or unmounts a block. Works on `<template>` (can have multiple root nodes) or a single element. Child subscriptions and refs are fully disposed on unmount and re-created on re-mount. Nesting is supported.
+
+```html
+<template x-if="isLoggedIn">
+  <span x-text="userName"></span>
+</template>
+
+<!-- single-element shorthand -->
+<p x-if="showNote">A note</p>
+```
+
+Can be combined with `x-portal` on the same element — see [x-portal](#x-portal).
+
+### x-for
+
+Renders a list with keyed reconciliation. `x-key` is required; it keeps existing DOM nodes stable when the list is reordered.
 
 ```html
 <template x-for="item in items" x-key="item.id">
@@ -80,225 +114,243 @@ defineComponent('todo-app', (ctx) => {
 </template>
 ```
 
-For non-template usage:
+**Index binding** — use `(item, index)` to name the index. `$index` is also always available without the explicit alias:
 
 ```html
-<li x-for="item in items" x-key="item.id">
-  <span x-text="item.text"></span>
-</li>
+<template x-for="(item, i) in items" x-key="item.id">
+  <li x-text="i + ': ' + item.text"></li>
+</template>
 ```
+
+Additional details:
+- Non-array values are silently treated as an empty list.
+- Duplicate keys throw at runtime.
+- Templates may contain multiple root nodes per iteration.
+- Works on a normal element too: `<li x-for="item in items" x-key="item.id">`.
+
+### x-show
+
+Toggles `display: none` without mounting/unmounting — the DOM node stays alive. The original `style.display` value is captured once at init and restored whenever the expression is truthy.
+
+```html
+<div x-show="isVisible">Always in the DOM</div>
+```
+
+If the element already has `style="display: none"` at init time, that `none` is captured as the original value and `x-show` effectively becomes a no-op.
+
+### x-ref
+
+Registers an element in `$refs`.
+
+**Static refs** — elements *not* inside `x-if`, `x-for`, `x-portal`, or `<template>` — are collected before `setup` runs, so they are available immediately as `ctx.$refs`:
+
+```html
+<input x-ref="email" />
+```
+
+**Dynamic refs** — elements inside conditional or loop directives — are added to `$refs` when the containing block mounts and removed when it unmounts. They share the same `$refs` object.
+
+### x-portal
+
+Renders content into a different part of the DOM identified by a CSS selector. Content is removed when the component disconnects.
+
+```html
+<template x-portal="#modal-root">
+  <div class="modal">Modal content</div>
+</template>
+```
+
+Combine with `x-if` on the same element for a conditional portal:
+
+```html
+<template x-portal="#modal-root" x-if="isOpen">
+  <div class="modal">...</div>
+</template>
+```
+
+### x-on
+
+Attaches an event listener.
+
+```html
+<button x-on:click="increment()">+</button>
+```
+
+**Modifiers** (chainable in any order):
+
+| Modifier | Effect |
+|---|---|
+| `.prevent` | calls `event.preventDefault()` |
+| `.stop` | calls `event.stopPropagation()` |
+| `.once` | listener fires at most once |
+| `.capture` | uses the capture phase |
+
+```html
+<a x-on:click.prevent.stop="navigate(url)">Link</a>
+```
+
+**Special variables** available inside the expression:
+
+| Variable | Value |
+|---|---|
+| `$event` | the native `Event` object |
+| `$el` | the element the listener is attached to |
+
+If the expression is a bare identifier that resolves to a function (e.g. `x-on:click="handler"`), it is called with the event as the first argument and the scope as `this`. If it resolves to a non-function value, nothing happens.
+
+### x-attr
+
+Sets or removes an HTML attribute.
+
+```html
+<button x-attr:disabled="isDisabled"></button>
+```
+
+| Value | Behaviour |
+|---|---|
+| `true` | sets the attribute to `""` (correct for boolean attrs like `disabled`) |
+| `false` / `null` / `undefined` | removes the attribute |
+| anything else | coerced to string |
+
+### x-prop
+
+Sets an element **property** directly (not an attribute). The value is assigned as-is — no coercion.
+
+```html
+<input x-prop:value="text" />
+<input type="checkbox" x-prop:checked="done" />
+```
+
+### x-class
+
+Two forms:
+
+**Toggle a single class:**
+
+```html
+<span x-class:active="isActive"></span>
+```
+
+**Merge dynamic classes with existing static classes** (uses [clsx](https://github.com/lukeed/clsx)):
+
+```html
+<div class="btn" x-class="{ primary: isPrimary, lg: size === 'lg' }"></div>
+<div x-class="['card', size]"></div>
+```
+
+Static classes already on the element are preserved across updates.
+
+### x-style
+
+Sets a single inline style property. Supports kebab-case names and CSS custom properties.
+
+```html
+<div x-style:color="textColor"></div>
+<div x-style:background-color="bg"></div>
+<div x-style:--accent="brandColor"></div>
+```
+
+`false` or `null` removes the property.
+
+### x-cloak
+
+Removes itself after the component initialises. Use alongside a CSS rule to prevent a flash of un-rendered template:
+
+```css
+[x-cloak] { display: none; }
+```
+
+```html
+<div x-cloak>
+  <span x-text="name"></span>
+</div>
+```
+
+## Expressions
+
+Directive values are parsed and evaluated as expressions. Supported syntax:
+
+| Category | Examples |
+|---|---|
+| Literals | `42`, `3.14`, `"hello"`, `'world'`, `true`, `false`, `null` |
+| Identifiers | `count`, `$refs`, `item` |
+| Member / index access | `user.name`, `items[0]`, `map[key]` |
+| Calls | `fn()`, `obj.method(arg)`, `arr[0]()` |
+| Arithmetic | `a + b`, `a - b`, `a * b`, `a / b` |
+| Comparison | `a === b`, `a !== b`, `a < b`, `a <= b`, `a > b`, `a >= b` |
+| Logical | `a && b`, `a \|\| b` — both short-circuit |
+| Unary | `!flag`, `-count`, `+str` |
+| Ternary | `cond ? a : b` |
+| Array literal | `[a, b, c]` |
+| Object literal | `{ key: value, other: expr }` |
+
+`+` works for string concatenation as well as addition.
 
 ## SSR + hydration
 
-`x-for` can hydrate server-rendered DOM if the initial markup matches the template:
+`x-for` can adopt server-rendered sibling nodes instead of re-rendering from scratch. On first render, if the DOM nodes immediately following a `<template x-for>` match the template's structure (same tag names in the same order, one group per list item), RWC binds directives directly to those existing nodes.
 
 ```html
 <ul>
   <template x-for="item in items" x-key="item.id">
     <li x-text="item.text"></li>
   </template>
-  <!-- SSR output -->
+  <!-- server-rendered output that matches the template pattern: -->
   <li>Draft component API</li>
   <li>Build directive tests</li>
 </ul>
 ```
 
-If the SSR nodes match the template pattern, RWC adopts them instead of re-rendering. If not, it falls back to client rendering.
-
-## Refs in setup
-
-Static refs (not inside `template`, `x-if`, `x-for`, or `x-portal`) are available during `setup`:
-
-```ts
-defineComponent('example', (ctx) => {
-  ctx.on(ctx.$refs.input, 'keydown', (event) => {
-    if (event.key === 'Enter') {
-      // ...
-    }
-  });
-  return {};
-}, { adapter: nanostores });
-```
+If the pattern does not match (different tags, wrong number of nodes, etc.) it falls back to normal client-side rendering.
 
 ## Reactivity adapters
 
-Adapters implement a minimal interface:
+Every adapter implements three methods:
 
 ```ts
-export interface ReactivityAdapter<T = unknown> {
+interface ReactivityAdapter<T = unknown> {
   isStore(value: unknown): value is T;
   get(store: T): unknown;
   subscribe(store: T, callback: (value: unknown) => void): () => void;
 }
 ```
 
-Built-in adapters:
-- `rwc/adapters/nanostores`
-- `rwc/adapters/spred`
+| Adapter | Import path | Store detection |
+|---|---|---|
+| nanostores | `rwc/adapters/nanostores` | `.get()` + `.subscribe()` |
+| spred | `rwc/adapters/spred` | `.value` + `.subscribe()` |
 
-You can also create a custom adapter and pass it via the `adapter` option to `defineComponent`.
+Pass the adapter once per component:
+
+```ts
+import { nanostores } from 'rwc/adapters/nanostores';
+defineComponent('my-comp', setup, { adapter: nanostores });
+```
+
+A custom adapter can be created by implementing the three-method interface above.
 
 ## Examples
 
-This directory contains example applications demonstrating various features of RWC (Reactive Web Components).
+| Example | Adapter | Highlights |
+|---|---|---|
+| `examples/todo-app-spred` | spred | Core directives, two-way binding, computed values |
+| `examples/todo-app-nanostores` | nanostores | Same app with a different adapter — demonstrates adapter-agnostic design |
+| `examples/combobox` | — | `x-portal`, Floating UI integration, dynamic positioning |
+| `examples/astro-nanostores-todo` | nanostores | SSR with Astro, hydration, `data-initial` seeding |
 
-### 1. Todo App (Spred) (`examples/todo-app-spred/`)
+Each example has its own `package.json`. Run any of them with:
 
-A classic todo application demonstrating:
-- Component state management with signals
-- Computed values (filtered lists, counts)
-- Event handling (add, toggle, delete)
-- Conditional rendering (`x-if`)
-- List rendering (`x-for`)
-- Two-way binding (`x-prop`, `x-on:input`)
-- Class bindings (`x-class`)
-- Element references (`x-ref`)
-- **Uses @spred/core for reactivity**
-
-**Run it:**
 ```bash
-cd examples/todo-app-spred
+cd examples/<name>
 pnpm install
 pnpm dev
 ```
-
-Then open http://localhost:5173
-
-### 1b. Todo App - Nanostores (`examples/todo-app-nanostores/`)
-
-The same todo application but using nanostores instead of @spred/core.
-
-Demonstrates:
-- Adapter-agnostic design
-- Using `atom` and `computed` from nanostores
-- Identical functionality with a different reactivity library
-- Pink color scheme to differentiate from the spred version
-
-**Run it:**
-```bash
-cd examples/todo-app-nanostores
-pnpm install
-pnpm dev
-```
-
-Then open http://localhost:5173
-
-**Compare** the two versions to see how RWC works with different reactivity systems.
-
-### 2. Combobox with Floating UI (`examples/combobox/`)
-
-A searchable country selector with a floating dropdown, demonstrating:
-- Integration with external libraries (Floating UI)
-- Portal directive (`x-portal`) to render the dropdown in `body`
-- Dynamic positioning with `x-style` and `x-attr`
-- Event-driven open/close logic and selection state
-- List rendering (`x-for`) and conditional rendering (`x-if`, `x-show`)
-
-**Dependencies:**
-This example requires `@floating-ui/dom`. Install it:
-```bash
-cd examples/combobox
-pnpm add @floating-ui/dom
-```
-
-**Run it:**
-```bash
-cd examples/combobox
-pnpm install
-pnpm dev
-```
-
-Then open http://localhost:5173
-
-### 3. Astro Todo App (Nanostores) (`examples/astro-nanostores-todo/`)
-
-An Astro page that renders the todo UI server-side and enhances it with RWC + nanostores on the client.
-
-Demonstrates:
-- Using RWC directives inside `.astro` templates
-- Seeding client state via `data-initial`
-- Adapter usage with nanostores inside Astro
-
-**Run it:**
-```bash
-cd examples/astro-nanostores-todo
-pnpm install
-pnpm dev
-```
-
-Then open the local URL shown by Astro (usually http://localhost:4321).
-
-## Running Examples with Vite
-
-The Vite-based examples live in `examples/todo-app-spred`, `examples/todo-app-nanostores`, and `examples/combobox`.
-
-1. Make sure you have the dependencies installed in the example directory:
-   ```bash
-   pnpm install
-   ```
-
-2. Start the dev server:
-   ```bash
-   pnpm dev
-   ```
-
-3. Open the URL shown in the terminal (usually http://localhost:5173).
-
-## Key Concepts Demonstrated
-
-### Reactive State (Spred)
-```ts
-const count = signal(0);
-const doubled = signal(get => get(count) * 2);
-```
-
-### Reactive State (Nanostores)
-```ts
-const $count = atom(0);
-const $doubled = computed($count, (count) => count * 2);
-```
-
-### Event Handling
-```html
-<button x-on:click="increment()">+</button>
-<input x-on:input="$value.set($event.target.value)">
-```
-
-### Conditional Rendering
-```html
-<div x-if="visible">Only shown when visible is true</div>
-```
-
-### List Rendering
-```html
-<li x-for="item in items" x-key="item.id" x-text="item.name"></li>
-```
-
-### Portal
-```html
-<div x-portal="body" class="modal">Rendered at end of body</div>
-```
-
-### Component Context
-```ts
-defineComponent('my-component', (ctx) => {
-  // ctx.host - the component element
-  // ctx.$refs - element references
-  // ctx.dispatch - emit custom events
-  // ctx.on - event listeners with auto-cleanup
-  // ctx.registerCleanup - cleanup on disconnect
-});
-```
-
-## Learn More
-
-- Browse `examples/` for hands-on usage
-- Read `src/` to see the implementation details
 
 ## Development
 
 ```bash
-pnpm dev
-pnpm test:run
-pnpm typecheck
+pnpm install        # install dependencies
+pnpm dev            # Vite dev server (examples at index.html)
+pnpm test:run       # run tests (single pass)
+pnpm typecheck      # tsc --noEmit
 ```
