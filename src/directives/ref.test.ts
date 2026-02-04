@@ -37,4 +37,27 @@ describe('x-ref directive', () => {
     host.remove();
     expect(host.__ctx?.$refs.field).toBeUndefined();
   });
+
+  it('registers multiple refs', async () => {
+    const tag = nextTag('rwc-ref-multi');
+    defineComponent(tag, (ctx) => {
+      (ctx.host as { __ctx?: unknown }).__ctx = ctx;
+      return {};
+    }, { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <input x-ref="first" />
+        <button x-ref="second"></button>
+      </${tag}>
+    `;
+    await nextTick();
+
+    const host = document.querySelector(tag) as HTMLElement & { __ctx?: { $refs: Record<string, HTMLElement> } };
+    const input = document.querySelector(`${tag} input`) as HTMLInputElement;
+    const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
+
+    expect(host.__ctx?.$refs.first).toBe(input);
+    expect(host.__ctx?.$refs.second).toBe(button);
+  });
 });

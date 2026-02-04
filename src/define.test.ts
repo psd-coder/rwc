@@ -33,6 +33,26 @@ describe('defineComponent', () => {
     expect(el.dataset.cleaned).toBe('true');
   });
 
+  it('runs multiple cleanup callbacks', async () => {
+    const tag = nextTag('rwc-multi-cleanup');
+    let cleaned = 0;
+    defineComponent(tag, (ctx) => {
+      ctx.registerCleanup(() => {
+        cleaned += 1;
+      });
+      ctx.registerCleanup(() => {
+        cleaned += 1;
+      });
+      return {};
+    }, { adapter: testReactivity });
+
+    const el = document.createElement(tag);
+    document.body.append(el);
+    await nextTick();
+    el.remove();
+    expect(cleaned).toBe(2);
+  });
+
   it('updates directive bindings on store changes', async () => {
     const count = createStore(1);
     const tag = nextTag('rwc-text-define');

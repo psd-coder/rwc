@@ -32,6 +32,30 @@ describe('x-if directive', () => {
     expect(count.subs.size).toBe(1);
   });
 
+  it('supports templates with multiple root nodes', async () => {
+    const show = createStore(true);
+    const tag = nextTag('rwc-if-multi');
+    defineComponent(tag, () => ({ show }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <template x-if="show"><span>One</span><span>Two</span></template>
+      </${tag}>
+    `;
+    await nextTick();
+
+    const spans = document.querySelectorAll(`${tag} span`);
+    expect(spans.length).toBe(2);
+
+    setStore(show, false);
+    await nextTick();
+    expect(document.querySelectorAll(`${tag} span`).length).toBe(0);
+
+    setStore(show, true);
+    await nextTick();
+    expect(document.querySelectorAll(`${tag} span`).length).toBe(2);
+  });
+
   it('supports non-template elements', async () => {
     const show = createStore(true);
     const count = createStore(1);

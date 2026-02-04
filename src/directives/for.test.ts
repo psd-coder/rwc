@@ -56,6 +56,107 @@ describe('x-for directive', () => {
     expect(nodeA.textContent).toBe('1');
   });
 
+  it('adds and removes items reactively', async () => {
+    const items = createStore([
+      { id: 'a' },
+      { id: 'b' }
+    ]);
+    const tag = nextTag('rwc-for-add-remove');
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items" x-key="item.id">
+            <li x-text="item.id"></li>
+          </template>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    expect(list.querySelectorAll('li').length).toBe(2);
+
+    setStore(items, [{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+    await nextTick();
+    expect(list.querySelectorAll('li').length).toBe(3);
+
+    setStore(items, [{ id: 'a' }]);
+    await nextTick();
+    expect(list.querySelectorAll('li').length).toBe(1);
+  });
+
+  it('clears rendered nodes when the list becomes empty', async () => {
+    const items = createStore([{ id: 'a' }]);
+    const tag = nextTag('rwc-for-empty');
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items" x-key="item.id">
+            <li x-text="item.id"></li>
+          </template>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    expect(list.querySelectorAll('li').length).toBe(1);
+
+    setStore(items, []);
+    await nextTick();
+    expect(list.querySelectorAll('li').length).toBe(0);
+  });
+
+  it('supports index aliases', async () => {
+    const items = createStore(['a', 'b']);
+    const tag = nextTag('rwc-for-index');
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="(item, idx) in items" x-key="item">
+            <li x-text="idx"></li>
+          </template>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    const lis = Array.from(list.querySelectorAll('li'));
+    expect(lis[0].textContent).toBe('0');
+    expect(lis[1].textContent).toBe('1');
+  });
+
+  it('does not interfere with sibling elements', async () => {
+    const items = createStore([{ id: 'a' }, { id: 'b' }]);
+    const tag = nextTag('rwc-for-sibling');
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items" x-key="item.id">
+            <li x-text="item.id"></li>
+          </template>
+          <li class="sibling">Static</li>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    const lis = Array.from(list.querySelectorAll('li'));
+    expect(lis.length).toBe(3);
+    expect(list.querySelector('.sibling')?.textContent).toBe('Static');
+  });
+
   it('hydrates existing DOM without re-rendering', async () => {
     const items = createStore([
       { id: 'a', label: 'Alpha' },

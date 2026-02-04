@@ -20,4 +20,58 @@ describe('x-show directive', () => {
     setStore(visible, true);
     expect(div.style.display).toBe('inline-block');
   });
+
+  it('restores the inline display captured at init', async () => {
+    const visible = createStore(true);
+    const tag = nextTag('rwc-show-inline-none');
+    defineComponent(tag, () => ({ visible }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div style="display: none" x-show="visible"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.style.display).toBe('none');
+
+    setStore(visible, false);
+    expect(div.style.display).toBe('none');
+
+    setStore(visible, true);
+    expect(div.style.display).toBe('none');
+  });
+
+  it('restores empty inline display to allow CSS rules', async () => {
+    const visible = createStore(true);
+    const tag = nextTag('rwc-show-css');
+    defineComponent(tag, () => ({ visible }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <style>.show-box { display: flex; }</style>
+      <${tag}><div class="show-box" x-show="visible"></div></${tag}>
+    `;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.style.display).toBe('');
+
+    setStore(visible, false);
+    expect(div.style.display).toBe('none');
+
+    setStore(visible, true);
+    expect(div.style.display).toBe('');
+  });
+
+  it('handles expressions', async () => {
+    const count = createStore(5);
+    const tag = nextTag('rwc-show-expr');
+    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-show="count > 3"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.style.display).toBe('');
+
+    setStore(count, 2);
+    expect(div.style.display).toBe('none');
+  });
 });

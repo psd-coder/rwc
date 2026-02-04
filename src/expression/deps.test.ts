@@ -8,9 +8,20 @@ describe('dependency collection', () => {
   const isStore = (value: unknown): value is { __store: boolean } =>
     !!value && typeof value === 'object' && '__store' in value;
 
+  it('collects no dependencies from literals', () => {
+    expect(collectDependencies(parse('true'), {}, isStore)).toEqual([]);
+    expect(collectDependencies(parse('123'), {}, isStore)).toEqual([]);
+  });
+
   it('collects store identifiers', () => {
     const scope = { count: storeA, plain: 1 };
     const deps = collectDependencies(parse('count + 1'), scope, isStore);
+    expect(deps).toEqual([storeA]);
+  });
+
+  it('collects store identifiers from member access', () => {
+    const scope = { user: storeA };
+    const deps = collectDependencies(parse('user.name'), scope, isStore);
     expect(deps).toEqual([storeA]);
   });
 
@@ -30,5 +41,25 @@ describe('dependency collection', () => {
     const scope = { count: storeA, other: storeB };
     const deps = collectDependencies(parse('[count, { a: other }]'), scope, isStore);
     expect(deps).toEqual([storeA, storeB]);
+  });
+
+  it('collects dependencies inside unary and ternary expressions', () => {
+    const scope = { active: storeA, yes: storeB, no: storeB };
+    const unaryDeps = collectDependencies(parse('!active'), scope, isStore);
+    expect(unaryDeps).toEqual([storeA]);
+
+    const ternaryDeps = collectDependencies(parse('active ? yes : no'), scope, isStore);
+    expect(ternaryDeps).toEqual([storeA, storeB]);
+  });
+
+  it('collects dependencies from call arguments', () => {
+    const scope = { count: storeA, format: () => {} };
+    const deps = collectDependencies(parse('format(count)'), scope, isStore);
+    expect(deps).toEqual([storeA]);
+  });
+
+  it('ignores special variables not in scope', () => {
+    const deps = collectDependencies(parse('$event'), {}, isStore);
+    expect(deps).toEqual([]);
   });
 });

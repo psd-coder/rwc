@@ -13,4 +13,15 @@ describe('x-cloak directive', () => {
     await nextTick();
     expect(div.hasAttribute('x-cloak')).toBe(false);
   });
+
+  it('ignores elements without x-cloak', async () => {
+    const tag = nextTag('rwc-cloak-none');
+    defineComponent(tag, () => ({}), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.hasAttribute('x-cloak')).toBe(false);
+  });
 });

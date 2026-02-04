@@ -34,6 +34,40 @@ describe('x-class directive', () => {
     expect(div.classList.contains('highlight')).toBe(false);
   });
 
+  it('supports array syntax with clsx', async () => {
+    const size = createStore('lg');
+    const tag = nextTag('rwc-class-array');
+    defineComponent(tag, () => ({ size }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-class="['btn', size]"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.classList.contains('btn')).toBe(true);
+    expect(div.classList.contains('lg')).toBe(true);
+
+    setStore(size, 'sm');
+    expect(div.classList.contains('lg')).toBe(false);
+    expect(div.classList.contains('sm')).toBe(true);
+  });
+
+  it('supports conditional expressions', async () => {
+    const count = createStore(5);
+    const tag = nextTag('rwc-class-conditional');
+    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-class="count > 3 ? 'high' : 'low'"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.classList.contains('high')).toBe(true);
+    expect(div.classList.contains('low')).toBe(false);
+
+    setStore(count, 2);
+    expect(div.classList.contains('high')).toBe(false);
+    expect(div.classList.contains('low')).toBe(true);
+  });
+
   it('keeps base classes stable across x-for rebinds', async () => {
     const todos = createStore([{ id: 1, completed: false }]);
     const tag = nextTag('rwc-class-for');
