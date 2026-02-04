@@ -64,7 +64,48 @@ describe('expression evaluator', () => {
     evaluate(parse('list.set(["b"])'), { list: store }, {}, resolve, isStore);
     expect(store.value).toEqual(['b']);
 
-    evaluate(parse('list.push("c")'), { list: store }, {}, resolve, isStore);
-    expect(store.value).toEqual(['b', 'c']);
+    evaluate(parse('list.add("c")'), { list: store }, {}, resolve, isStore);
+    expect(store.value.items).toEqual(['b', 'c']);
+  });
+
+  it('allows calling store prototype methods on call targets', () => {
+    class Store {
+      value = 1;
+      set(next: number) {
+        this.value = next;
+      }
+      subscribe() {
+        return () => {};
+      }
+    }
+    const store = new Store();
+    const isStore = (value: unknown): value is Store =>
+      !!value && typeof value === 'object' && 'value' in value && 'subscribe' in value;
+    const resolve = (value: unknown) => (isStore(value) ? value.value : value);
+
+    evaluate(parse('store.set(5)'), { store }, {}, resolve, isStore);
+    expect(store.value).toBe(5);
+  });
+
+  it('allows prototype method calls but blocks dangerous keys', () => {
+    class Demo {
+      get value() {
+        return 3;
+      }
+      method() {
+        return 4;
+      }
+    }
+    const scope = { list: ['a', 'b'], demo: new Demo() };
+    expect(evaluate(parse('list.length'), scope)).toBe(2);
+    expect(evaluate(parse('demo.value'), scope)).toBe(3);
+    expect(evaluate(parse('list.map'), scope)).toBeUndefined();
+    expect(evaluate(parse('demo.method'), scope)).toBeUndefined();
+    expect(evaluate(parse('({}).toString'), {})).toBeUndefined();
+    expect(evaluate(parse('list.push("c")'), scope)).toBe(3);
+    expect(scope.list).toEqual(['a', 'b', 'c']);
+    expect(evaluate(parse('demo.method()'), scope)).toBe(4);
+    expect(() => evaluate(parse('({}).constructor()'), {})).toThrow('Call target is not a function');
+    expect(() => evaluate(parse('({}).__proto__()'), {})).toThrow('Call target is not a function');
   });
 });

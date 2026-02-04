@@ -24,7 +24,7 @@ export function evaluate(
         | Record<PropertyKey, unknown>
         | null
         | undefined;
-      return object?.[expr.property];
+      return getProperty(object, expr.property);
     }
     case 'index': {
       const object = evaluate(expr.object, scope, specials, resolve, isStore) as
@@ -32,7 +32,7 @@ export function evaluate(
         | null
         | undefined;
       const index = evaluate(expr.index, scope, specials, resolve, isStore) as PropertyKey;
-      return object?.[index];
+      return getProperty(object, index);
     }
     case 'array':
       return expr.items.map(item => evaluate(item, scope, specials, resolve, isStore));
@@ -119,16 +119,23 @@ function evaluateCall(
       | Record<PropertyKey, unknown>
       | null
       | undefined;
-    const fn = object?.[expr.callee.property];
+    const fn = getCallableProperty(object, expr.callee.property);
     if (typeof fn === 'function') {
       return fn.apply(object, args);
     }
 
-    const fallbackObject = evaluateCallObject(expr.callee.object, scope, specials, resolve, isStore, false) as
+    const fallbackObject = evaluateCallObject(
+      expr.callee.object,
+      scope,
+      specials,
+      resolve,
+      isStore,
+      false
+    ) as
       | Record<PropertyKey, unknown>
       | null
       | undefined;
-    const fallbackFn = fallbackObject?.[expr.callee.property];
+    const fallbackFn = getCallableProperty(fallbackObject, expr.callee.property);
     if (typeof fallbackFn === 'function') {
       return fallbackFn.apply(fallbackObject, args);
     }
@@ -142,16 +149,23 @@ function evaluateCall(
       | Record<PropertyKey, unknown>
       | null
       | undefined;
-    const fn = object?.[index];
+    const fn = getCallableProperty(object, index);
     if (typeof fn === 'function') {
       return fn.apply(object, args);
     }
 
-    const fallbackObject = evaluateCallObject(expr.callee.object, scope, specials, resolve, isStore, false) as
+    const fallbackObject = evaluateCallObject(
+      expr.callee.object,
+      scope,
+      specials,
+      resolve,
+      isStore,
+      false
+    ) as
       | Record<PropertyKey, unknown>
       | null
       | undefined;
-    const fallbackFn = fallbackObject?.[index];
+    const fallbackFn = getCallableProperty(fallbackObject, index);
     if (typeof fallbackFn === 'function') {
       return fallbackFn.apply(fallbackObject, args);
     }
@@ -190,7 +204,7 @@ function evaluateCallObject(
         | Record<PropertyKey, unknown>
         | null
         | undefined;
-      return object?.[expr.property];
+      return getProperty(object, expr.property);
     }
     case 'index': {
       const object = evaluateCallObject(expr.object, scope, specials, resolve, isStore, preferStore) as
@@ -198,9 +212,45 @@ function evaluateCallObject(
         | null
         | undefined;
       const index = evaluate(expr.index, scope, specials, resolve, isStore) as PropertyKey;
-      return object?.[index];
+      return getProperty(object, index);
     }
     default:
       return evaluate(expr, scope, specials, resolve, isStore);
   }
+}
+
+function getProperty(object: Record<PropertyKey, unknown> | null | undefined, property: PropertyKey): unknown {
+  if (!object) return undefined;
+  const value = object[property];
+  if (!Object.prototype.hasOwnProperty.call(object, property)) {
+    return typeof value === 'function' ? undefined : value;
+  }
+  return value;
+}
+
+const DANGEROUS_CALL_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+  'caller',
+  'callee',
+  'arguments',
+  '__defineGetter__',
+  '__defineSetter__',
+  '__lookupGetter__',
+  '__lookupSetter__',
+]);
+
+function isDangerousCallKey(property: PropertyKey): boolean {
+  return typeof property === 'string' && DANGEROUS_CALL_KEYS.has(property);
+}
+
+function getCallableProperty(
+  object: Record<PropertyKey, unknown> | null | undefined,
+  property: PropertyKey
+): unknown {
+  if (!object) return undefined;
+  if (isDangerousCallKey(property)) return undefined;
+  if (!(property in object)) return undefined;
+  return object[property];
 }
