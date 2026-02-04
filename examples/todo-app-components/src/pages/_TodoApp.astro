@@ -1,0 +1,335 @@
+---
+import { DEFAULT_STATE, getStores } from './_store';
+
+const {
+  $items,
+  $itemsSnapshot,
+  $filter,
+  $activeTodos,
+  $completedTodos,
+  $filteredItems,
+  $canAdd,
+  $emptyMessage
+} = getStores(DEFAULT_STATE);
+---
+<todo-app x-cloak data-initial={JSON.stringify(DEFAULT_STATE)}>
+  <h1>📝 Todo App — Components</h1>
+
+  <div class="add-todo">
+    <input
+      x-ref="input"
+      type="text"
+      x-prop:value="$newTodo"
+      x-on:input="onInput($event)"
+      placeholder="What needs to be done?">
+    <button class="btn-add" x-on:click="addTodo()" x-prop:disabled="!$canAdd" disabled={!$canAdd.get()}>
+      Add
+    </button>
+  </div>
+
+  <div class="filters">
+    <button
+      class={`filter-btn${$filter.get() === 'all' ? ' active' : ''}`}
+      x-class:active="$filter === 'all'"
+      x-on:click="setFilter('all')">
+      All (<span x-text="$items.length">{$items.get().length}</span>)
+    </button>
+    <button
+      class={`filter-btn${$filter.get() === 'active' ? ' active' : ''}`}
+      x-class:active="$filter === 'active'"
+      x-on:click="setFilter('active')">
+      Active (<span x-text="$activeTodos.length">{$activeTodos.get().length}</span>)
+    </button>
+    <button
+      class={`filter-btn${$filter.get() === 'completed' ? ' active' : ''}`}
+      x-class:active="$filter === 'completed'"
+      x-on:click="setFilter('completed')">
+      Completed (<span x-text="$completedTodos.length">{$completedTodos.get().length}</span>)
+    </button>
+  </div>
+
+  <template x-if="$filteredItems.length === 0">
+    <div class="empty-state">
+      <p x-text="$emptyMessage">{$emptyMessage.get()}</p>
+    </div>
+  </template>
+
+  <div class="todos" x-show="$filteredItems.length > 0">
+    <template x-for="$item in $filteredItems" x-key="$item.id">
+      <todo-item x-prop:$item="$item" x-prop:$items="$items">
+        <div class="todo-item">
+          <input
+            type="checkbox"
+            class="todo-checkbox"
+            x-prop:checked="$item.completed"
+            x-on:change="toggle()">
+          <span class="todo-text" x-text="$item.text" x-class="{ completed: $item.completed }"></span>
+          <button class="btn-delete" x-on:click="remove()">
+            Delete
+          </button>
+        </div>
+      </todo-item>
+    </template>
+    {$filteredItems.get().map(($item) => {
+      const todo = $item.get();
+      return (
+        <todo-item x-prop:$item="$item" x-prop:$items="$items">
+          <div class="todo-item">
+            <input
+              type="checkbox"
+              class="todo-checkbox"
+              checked={todo.completed}
+              x-prop:checked="$item.completed"
+              x-on:change="toggle()">
+            <span
+              class={`todo-text${todo.completed ? ' completed' : ''}`}
+              x-text="$item.text"
+              x-class="{ completed: $item.completed }">
+              {todo.text}
+            </span>
+            <button class="btn-delete" x-on:click="remove()">
+              Delete
+            </button>
+          </div>
+        </todo-item>
+      );
+    })}
+  </div>
+
+  <div class="stats" x-show="$items.length > 0">
+    <span>
+      <span x-text="$activeTodos.length">{$activeTodos.get().length}</span>
+      <span x-text="$activeTodos.length === 1 ? 'item' : 'items'">{$activeTodos.get().length === 1 ? 'item' : 'items'}</span>
+      left
+    </span>
+    <button
+      x-show="$completedTodos.length > 0"
+      x-on:click="clearCompleted()"
+      style="background: transparent; color: #999; padding: 0;">
+      Clear completed
+    </button>
+  </div>
+</todo-app>
+
+<script>
+  import { atom, type WritableAtom } from 'nanostores';
+  import { defineComponent } from '../../../../src/index';
+  import { nanostores } from '../../../../src/adapters/nanostores';
+  import { getStores, type InitialData, type Filter, type ItemAtom } from './_store';
+
+  type ItemStore = WritableAtom<ItemAtom[]>;
+
+  const parseInitial = (value?: string) => {
+    if (!value) return null;
+    try {
+      return JSON.parse(value) as InitialData;
+    } catch {
+      return null;
+    }
+  };
+
+  defineComponent<{ $item: ItemAtom; $items: ItemStore }>('todo-item', (ctx) => {
+    const $item = ctx.props.$item;
+    const $items = ctx.props.$items;
+
+    const toggle = () => {
+      const current = $item.get();
+      $item.set({ ...current, completed: !current.completed });
+    };
+
+    const remove = () => {
+      $items.set($items.get().filter((store) => store !== $item));
+    };
+
+    return { $item, toggle, remove };
+  }, { adapter: nanostores, props: ['$item', '$items'] });
+
+  defineComponent('todo-app', (ctx) => {
+    const initial = parseInitial(ctx.host.dataset.initial);
+    const {
+      $items,
+      $itemsSnapshot,
+      $newTodo,
+      $filter,
+      $activeTodos,
+      $completedTodos,
+      $filteredItems,
+      $canAdd,
+      $emptyMessage
+    } = getStores(initial ?? { todos: [], filter: 'all' });
+
+    const onInput = (event: Event) => {
+      const target = event.target as HTMLInputElement | null;
+      $newTodo.set(target?.value ?? '');
+    };
+
+    const addTodo = () => {
+      const text = $newTodo.get().trim();
+      if (!text) return;
+      $items.set([...$items.get(), atom({ id: Date.now(), text, completed: false })]);
+      $newTodo.set('');
+      ctx.$refs.input?.focus();
+    };
+
+    ctx.on(ctx.$refs.input, 'keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        addTodo();
+      }
+    });
+
+    const clearCompleted = () => {
+      const items = $items.get();
+      const snapshot = $itemsSnapshot.get();
+      $items.set(items.filter((_, index) => !snapshot[index]?.completed));
+    };
+
+    const setFilter = (next: Filter) => {
+      $filter.set(next);
+    };
+
+    return {
+      $items,
+      $newTodo,
+      $filter,
+      $activeTodos,
+      $completedTodos,
+      $filteredItems,
+      $canAdd,
+      $emptyMessage,
+      onInput,
+      addTodo,
+      clearCompleted,
+      setFilter
+    };
+  }, { adapter: nanostores });
+</script>
+<style>
+  h1 {
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+
+  .add-todo {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+
+  input[type="text"]:focus {
+    outline: none;
+    border-color: #e91e63;
+  }
+
+  button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-add {
+    background: #e91e63;
+    color: white;
+  }
+
+  .btn-add:hover {
+    background: #c2185b;
+  }
+
+  .btn-add:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #eee;
+  }
+
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    background: #f0f0f0;
+    color: #666;
+  }
+
+  .filter-btn.active {
+    background: #e91e63;
+    color: white;
+  }
+
+  .todos {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+  }
+
+  .todo-item:hover {
+    background: #f9f9f9;
+  }
+
+  .todo-checkbox {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .todo-text {
+    flex: 1;
+    font-size: 1rem;
+  }
+
+  .todo-text.completed {
+    text-decoration: line-through;
+    color: #999;
+  }
+
+  .btn-delete {
+    padding: 0.5rem 1rem;
+    background: #f44336;
+    color: white;
+    font-size: 0.875rem;
+  }
+
+  .btn-delete:hover {
+    background: #da190b;
+  }
+
+  .stats {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #eee;
+    color: #666;
+    font-size: 0.875rem;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #999;
+  }
+</style>
