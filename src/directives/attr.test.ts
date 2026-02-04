@@ -44,6 +44,21 @@ describe('x-attr directive', () => {
     expect(div.hasAttribute('title')).toBe(false);
   });
 
+  it('removes attribute when value is undefined', async () => {
+    const title = createStore<unknown>('hello');
+    const tag = nextTag('rwc-attr-undef');
+    defineComponent(tag, () => ({ title }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-attr:title="title"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.getAttribute('title')).toBe('hello');
+
+    setStore(title, undefined);
+    expect(div.hasAttribute('title')).toBe(false);
+  });
+
   it('serializes true to an empty attribute', async () => {
     const enabled = createStore(true);
     const tag = nextTag('rwc-attr-true');

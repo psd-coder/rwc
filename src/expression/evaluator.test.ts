@@ -136,6 +136,32 @@ describe('expression evaluator', () => {
     expect(store.value).toBe(5);
   });
 
+  it('returns undefined for property access on null and undefined', () => {
+    expect(evaluate(parse('x.foo'), { x: null })).toBeUndefined();
+    expect(evaluate(parse('x.foo'), { x: undefined })).toBeUndefined();
+    expect(evaluate(parse('x[0]'), { x: null })).toBeUndefined();
+  });
+
+  it('returns undefined for identifiers not in scope', () => {
+    expect(evaluate(parse('missing'), {})).toBeUndefined();
+  });
+
+  it('concatenates strings with the + operator', () => {
+    expect(evaluate(parse('"hello" + " " + "world"'), {})).toBe('hello world');
+    expect(evaluate(parse('x + "!"'), { x: 'hi' })).toBe('hi!');
+  });
+
+  it('supports index-based method calls', () => {
+    const scope = { fns: [() => 'first', () => 'second'] };
+    expect(evaluate(parse('fns[0]()'), scope)).toBe('first');
+    expect(evaluate(parse('fns[1]()'), scope)).toBe('second');
+  });
+
+  it('returns Infinity for division by zero', () => {
+    expect(evaluate(parse('1 / 0'), {})).toBe(Infinity);
+    expect(evaluate(parse('-1 / 0'), {})).toBe(-Infinity);
+  });
+
   it('allows prototype method calls but blocks dangerous keys', () => {
     class Demo {
       get value() {

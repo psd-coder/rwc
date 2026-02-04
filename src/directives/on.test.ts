@@ -152,6 +152,20 @@ describe('x-on directive', () => {
     expect((boundThis as { count?: unknown })?.count).toBe(count);
   });
 
+  it('does nothing when expression is not a call and not a function', async () => {
+    const count = createStore(42);
+    const tag = nextTag('rwc-on-nonfn');
+    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><button x-on:click="count"></button></${tag}>`;
+    const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
+
+    await nextTick();
+    // Clicking should not throw even though "count" evaluates to a number
+    button.click();
+    expect(count.value).toBe(42);
+  });
+
   it('removes listeners on disconnect', async () => {
     const count = createStore(0);
     const tag = nextTag('rwc-on-cleanup');

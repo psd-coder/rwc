@@ -55,6 +55,21 @@ describe('x-style directive', () => {
     expect(div.style.backgroundColor).toBe('yellow');
   });
 
+  it('removes style when value is false', async () => {
+    const color = createStore<unknown>('blue');
+    const tag = nextTag('rwc-style-false');
+    defineComponent(tag, () => ({ color }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-style:color="color"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.style.color).toBe('blue');
+
+    setStore(color, false);
+    expect(div.style.color).toBe('');
+  });
+
   it('stringifies true for custom properties', async () => {
     const flag = createStore<unknown>(true);
     const tag = nextTag('rwc-style-true');

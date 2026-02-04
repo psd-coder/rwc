@@ -53,6 +53,34 @@ describe('defineComponent', () => {
     expect(cleaned).toBe(2);
   });
 
+  it('silently ignores double registration of the same tag', () => {
+    const tag = nextTag('rwc-double');
+    defineComponent(tag, () => ({}), { adapter: testReactivity });
+    // Second call must not throw
+    defineComponent(tag, () => ({}), { adapter: testReactivity });
+    expect(customElements.get(tag)).toBeDefined();
+  });
+
+  it('throws when adapter is missing', () => {
+    const tag = nextTag('rwc-no-adapter');
+    expect(() => defineComponent(tag, () => ({}), { adapter: undefined as any })).toThrow(/[Aa]dapter/);
+  });
+
+  it('skips initialization if element is disconnected before microtask fires', async () => {
+    const tag = nextTag('rwc-disconnected');
+    let setupCalled = false;
+    defineComponent(tag, () => {
+      setupCalled = true;
+      return {};
+    }, { adapter: testReactivity });
+
+    const el = document.createElement(tag);
+    document.body.append(el);
+    el.remove();
+    await nextTick();
+    expect(setupCalled).toBe(false);
+  });
+
   it('updates directive bindings on store changes', async () => {
     const count = createStore(1);
     const tag = nextTag('rwc-text-define');

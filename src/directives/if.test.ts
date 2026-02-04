@@ -56,6 +56,52 @@ describe('x-if directive', () => {
     expect(document.querySelectorAll(`${tag} span`).length).toBe(2);
   });
 
+  it('starts unmounted when expression is initially falsy', async () => {
+    const show = createStore(false);
+    const tag = nextTag('rwc-if-false-init');
+    defineComponent(tag, () => ({ show }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><template x-if="show"><span>Hi</span></template></${tag}>`;
+    await nextTick();
+
+    expect(document.querySelector(`${tag} span`)).toBeNull();
+
+    setStore(show, true);
+    expect(document.querySelector(`${tag} span`)?.textContent).toBe('Hi');
+
+    setStore(show, false);
+    expect(document.querySelector(`${tag} span`)).toBeNull();
+  });
+
+  it('handles nested x-if correctly', async () => {
+    const outer = createStore(true);
+    const inner = createStore(true);
+    const tag = nextTag('rwc-if-nested');
+    defineComponent(tag, () => ({ outer, inner }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <template x-if="outer">
+          <template x-if="inner">
+            <span class="nested">Inside</span>
+          </template>
+        </template>
+      </${tag}>
+    `;
+    await nextTick();
+    expect(document.querySelector(`${tag} .nested`)?.textContent).toBe('Inside');
+
+    setStore(inner, false);
+    expect(document.querySelector(`${tag} .nested`)).toBeNull();
+
+    setStore(inner, true);
+    expect(document.querySelector(`${tag} .nested`)?.textContent).toBe('Inside');
+
+    // Unmounting outer also removes inner content
+    setStore(outer, false);
+    expect(document.querySelector(`${tag} .nested`)).toBeNull();
+  });
+
   it('supports non-template elements', async () => {
     const show = createStore(true);
     const count = createStore(1);

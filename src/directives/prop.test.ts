@@ -29,6 +29,25 @@ describe('x-prop directive', () => {
     expect(input.value).toBe('beta');
   });
 
+  it('assigns null and undefined directly to properties', async () => {
+    const val = createStore<unknown>('test');
+    const tag = nextTag('rwc-prop-nullish');
+    defineComponent(tag, () => ({ val }), { adapter: testReactivity });
+
+    // HTML lowercases attribute names, so use all-lowercase prop
+    document.body.innerHTML = `<${tag}><div x-prop:customprop="val"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect((div as any).customprop).toBe('test');
+
+    setStore(val, null);
+    expect((div as any).customprop).toBeNull();
+
+    setStore(val, undefined);
+    expect((div as any).customprop).toBeUndefined();
+  });
+
   it('updates boolean properties', async () => {
     const checked = createStore(false);
     const tag = nextTag('rwc-prop-checked');

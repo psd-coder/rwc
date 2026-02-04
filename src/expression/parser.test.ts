@@ -125,4 +125,56 @@ describe('expression parser', () => {
       right: { type: 'literal', value: 3 }
     });
   });
+
+  it('parses empty array and object literals', () => {
+    expect(parse('[]')).toEqual({ type: 'array', items: [] });
+    expect(parse('{}')).toEqual({ type: 'object', entries: [] });
+  });
+
+  it('parses chained calls', () => {
+    expect(parse('fn()()')).toEqual({
+      type: 'call',
+      callee: {
+        type: 'call',
+        callee: { type: 'ident', name: 'fn' },
+        args: []
+      },
+      args: []
+    });
+  });
+
+  it('parses index-based calls', () => {
+    expect(parse('arr[0]()')).toEqual({
+      type: 'call',
+      callee: {
+        type: 'index',
+        object: { type: 'ident', name: 'arr' },
+        index: { type: 'literal', value: 0 }
+      },
+      args: []
+    });
+  });
+
+  it('parses nested ternary in consequent', () => {
+    // a ? b ? c : d : e  →  a ? (b ? c : d) : e
+    expect(parse('a ? b ? c : d : e')).toEqual({
+      type: 'ternary',
+      test: { type: 'ident', name: 'a' },
+      consequent: {
+        type: 'ternary',
+        test: { type: 'ident', name: 'b' },
+        consequent: { type: 'ident', name: 'c' },
+        alternate: { type: 'ident', name: 'd' }
+      },
+      alternate: { type: 'ident', name: 'e' }
+    });
+  });
+
+  it('throws on trailing tokens', () => {
+    expect(() => parse('1 2')).toThrow(/Expected eof/);
+  });
+
+  it('throws on unexpected token in primary position', () => {
+    expect(() => parse(')')).toThrow(/Unexpected token/);
+  });
 });

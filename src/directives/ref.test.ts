@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent } from '../define';
-import { nextTag, nextTick, testReactivity } from '../test-utils';
+import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-ref directive', () => {
   it('exposes static refs during setup', async () => {
@@ -36,6 +36,34 @@ describe('x-ref directive', () => {
 
     host.remove();
     expect(host.__ctx?.$refs.field).toBeUndefined();
+  });
+
+  it('registers and cleans up dynamic refs inside x-if', async () => {
+    const show = createStore(true);
+    const tag = nextTag('rwc-ref-if');
+    let refs: Record<string, HTMLElement> = {};
+    defineComponent(tag, (ctx) => {
+      refs = ctx.$refs;
+      return { show };
+    }, { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <template x-if="show">
+          <input x-ref="dynamic" />
+        </template>
+      </${tag}>
+    `;
+    await nextTick();
+
+    expect(refs.dynamic).toBeDefined();
+    expect(refs.dynamic.tagName).toBe('INPUT');
+
+    setStore(show, false);
+    expect(refs.dynamic).toBeUndefined();
+
+    setStore(show, true);
+    expect(refs.dynamic).toBeDefined();
   });
 
   it('registers multiple refs', async () => {

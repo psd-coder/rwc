@@ -269,6 +269,91 @@ describe('x-for directive', () => {
     expect(() => setStore(items, [{ id: 'a' }, { id: 'a' }])).toThrow(/duplicate key/i);
   });
 
+  it('treats non-array values as an empty list', async () => {
+    const items = createStore<unknown>(null);
+    const tag = nextTag('rwc-for-nonarray');
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items" x-key="item">
+            <li x-text="item"></li>
+          </template>
+        </ul>
+      </${tag}>
+    `;
+    await nextTick();
+
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    expect(list.querySelectorAll('li').length).toBe(0);
+
+    setStore(items, ['a', 'b']);
+    expect(list.querySelectorAll('li').length).toBe(2);
+
+    setStore(items, 'not an array' as any);
+    expect(list.querySelectorAll('li').length).toBe(0);
+  });
+
+  it('disposes child subscriptions when items are removed', async () => {
+    const label = createStore('hello');
+    const items = createStore([{ id: 'a' }]);
+    const tag = nextTag('rwc-for-dispose');
+    defineComponent(tag, () => ({ items, label }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-for="item in items" x-key="item.id">
+            <li x-text="label"></li>
+          </template>
+        </ul>
+      </${tag}>
+    `;
+    await nextTick();
+
+    const subsWithItem = label.subs.size;
+    expect(subsWithItem).toBeGreaterThan(0);
+
+    setStore(items, []);
+    // The x-text inside the removed entry unsubscribes from label
+    expect(label.subs.size).toBeLessThan(subsWithItem);
+  });
+
+  it('throws on invalid x-for expression syntax', () => {
+    const template = document.createElement('template');
+    template.setAttribute('x-for', 'notin');
+    template.setAttribute('x-key', 'item');
+    const ctx = createBindingContext({ items: [] }, testReactivity);
+    expect(() => processFor(template, 'notin', ctx, () => {})).toThrow(/Invalid x-for/);
+  });
+
+  it('renders multiple root nodes per iteration', async () => {
+    const items = createStore(['a', 'b']);
+    const tag = nextTag('rwc-for-multi-root');
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <div>
+          <template x-for="item in items" x-key="item">
+            <span x-text="item"></span>
+            <hr>
+          </template>
+        </div>
+      </${tag}>
+    `;
+    await nextTick();
+
+    const container = document.querySelector(`${tag} div`) as HTMLDivElement;
+    expect(container.querySelectorAll('span').length).toBe(2);
+    expect(container.querySelectorAll('hr').length).toBe(2);
+
+    setStore(items, ['a', 'b', 'c']);
+    expect(container.querySelectorAll('span').length).toBe(3);
+    expect(container.querySelectorAll('hr').length).toBe(3);
+  });
+
   it('supports non-template elements', async () => {
     const items = createStore(['a', 'b']);
     const tag = nextTag('rwc-for-el');
