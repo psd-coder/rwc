@@ -20,6 +20,7 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./style.css": "./dist/style.css",
     "./adapters/nanostores": {
       "types": "./dist/adapters/nanostores.d.ts",
       "import": "./dist/adapters/nanostores.js"
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.7.5",
+    "@types/node": "^25.2.1",
     "happy-dom": "^20.4.0",
     "terser": "^5.46.0",
     "tsup": "^8.0.0",

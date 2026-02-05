@@ -221,4 +221,48 @@ describe('x-if directive', () => {
     note = document.querySelector(`${tag} .note`) as HTMLParagraphElement;
     expect(note.textContent).toBe('2');
   });
+
+  it('reuses existing non-template elements on initial true', async () => {
+    const show = createStore(true);
+    const label = createStore('Ready');
+    const tag = nextTag('rwc-if-hydrate');
+    defineComponent(tag, () => ({ show, label }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div class="box" x-if="show" x-text="label"></div></${tag}>`;
+    const initial = document.querySelector(`${tag} .box`) as HTMLDivElement;
+
+    await nextTick();
+
+    const after = document.querySelector(`${tag} .box`) as HTMLDivElement;
+    expect(after).toBe(initial);
+    expect(after.textContent).toBe('Ready');
+
+    setStore(show, false);
+    await nextTick();
+    expect(document.querySelector(`${tag} .box`)).toBeNull();
+
+    setStore(show, true);
+    await nextTick();
+    const remounted = document.querySelector(`${tag} .box`) as HTMLDivElement;
+    expect(remounted).toBeTruthy();
+    expect(remounted).not.toBe(initial);
+  });
+
+  it('clears SSR markers when mounted', async () => {
+    const show = createStore(false);
+    const tag = nextTag('rwc-if-ssr');
+    defineComponent(tag, () => ({ show }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-if="show" x-if-ssr="false"></div></${tag}>`;
+    await nextTick();
+
+    expect(document.querySelector(`${tag} div`)).toBeNull();
+
+    setStore(show, true);
+    await nextTick();
+
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+    expect(div).toBeTruthy();
+    expect(div.hasAttribute('x-if-ssr')).toBe(false);
+  });
 });

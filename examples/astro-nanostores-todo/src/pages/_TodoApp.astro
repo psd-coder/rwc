@@ -2,6 +2,14 @@
 import { getStores, DEFAULT_STATE } from "./_store";
 
 const { $todos, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd, $emptyMessage } = getStores(DEFAULT_STATE);
+
+const filteredCount = $filteredTodos.get().length;
+const todosCount = $todos.get().length;
+const completedCount = $completedTodos.get().length;
+
+const showTodos = filteredCount > 0;
+const showStats = todosCount > 0;
+const showClearCompleted = completedCount > 0;
 ---
 <todo-nanostores x-cloak data-initial={JSON.stringify(DEFAULT_STATE)}>
       <h1>📝 Todo App — Astro</h1>
@@ -45,7 +53,7 @@ const { $todos, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd,
         </div>
       </template>
 
-      <ul class="todos" x-show="$filteredTodos.length > 0">
+      <ul class="todos" x-show="$filteredTodos.length > 0" x-show-ssr={showTodos ? 'true' : 'false'}>
         <template x-for="todo in $filteredTodos" x-key="todo.id">
           <li class="todo-item">
             <input
@@ -80,7 +88,7 @@ const { $todos, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd,
         ))}
       </ul>
 
-      <div class="stats" x-show="$todos.length > 0">
+      <div class="stats" x-show="$todos.length > 0" x-show-ssr={showStats ? 'true' : 'false'}>
         <span>
           <span x-text="$activeTodos.length">{$activeTodos.get().length}</span>
           <span x-text="$activeTodos.length === 1 ? 'item' : 'items'">{$activeTodos.get().length === 1 ? 'item' : 'items'}</span>
@@ -88,6 +96,7 @@ const { $todos, $filter, $activeTodos, $completedTodos, $filteredTodos, $canAdd,
         </span>
         <button
           x-show="$completedTodos.length > 0"
+          x-show-ssr={showClearCompleted ? 'true' : 'false'}
           x-on:click="clearCompleted()"
           style="background: transparent; color: #999; padding: 0;">
           Clear completed

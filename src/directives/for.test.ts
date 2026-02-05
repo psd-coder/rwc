@@ -385,4 +385,104 @@ describe('x-for directive', () => {
     expect(lisNext[0].textContent?.trim()).toBe('b');
     expect(lisNext[1].textContent?.trim()).toBe('c');
   });
+
+  it('hydrates server-rendered custom-element lists', async () => {
+    const itemA = createStore({ id: 'a', text: 'Alpha' });
+    const itemB = createStore({ id: 'b', text: 'Beta' });
+    const items = createStore([itemA, itemB]);
+    const tag = nextTag('rwc-for-ssr');
+    const childTag = nextTag('rwc-item-ssr');
+    const toggles: Array<typeof itemA> = [];
+
+    defineComponent(childTag, (ctx) => {
+      const $item = ctx.props.$item as typeof itemA;
+      const toggle = () => toggles.push($item);
+      return { $item, toggle };
+    }, { adapter: testReactivity, props: ['$item'] });
+
+    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <div class="todos" x-if="items.length > 0">
+          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+            <span class="label" x-text="$item.text"></span>
+            <button x-on:click="toggle()">Toggle</button>
+          </${childTag}>
+          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+            <span class="label" x-text="$item.text"></span>
+            <button x-on:click="toggle()">Toggle</button>
+          </${childTag}>
+        </div>
+      </${tag}>
+    `;
+
+    await nextTick();
+
+    const labels = Array.from(document.querySelectorAll(`${childTag} .label`));
+    const labelValues = labels.map((label) => label.textContent?.trim());
+    expect(labelValues).toContain('Alpha');
+    expect(labelValues).toContain('Beta');
+
+    const buttons = Array.from(document.querySelectorAll(`${childTag} button`)) as HTMLButtonElement[];
+    buttons[0]?.click();
+    expect(toggles).toHaveLength(1);
+    buttons[1]?.click();
+    expect(toggles).toHaveLength(2);
+    expect(toggles).toContain(itemA);
+    expect(toggles).toContain(itemB);
+  });
+
+  it('hydrates when components are defined after SSR markup', async () => {
+    const itemA = createStore({ id: 'a', text: 'Alpha' });
+    const itemB = createStore({ id: 'b', text: 'Beta' });
+    const items = createStore([itemA, itemB]);
+    const hostTag = nextTag('rwc-ssr-host');
+    const childTag = nextTag('rwc-ssr-item');
+    const toggles: Array<typeof itemA> = [];
+    let setupCalls = 0;
+
+    document.body.innerHTML = `
+      <${hostTag}>
+        <div class="todos">
+          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+            <span class="label" x-text="$item.text">Alpha</span>
+            <button x-on:click="toggle()">Toggle</button>
+          </${childTag}>
+          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+            <span class="label" x-text="$item.text">Beta</span>
+            <button x-on:click="toggle()">Toggle</button>
+          </${childTag}>
+        </div>
+      </${hostTag}>
+    `;
+
+    defineComponent(childTag, (ctx) => {
+      setupCalls += 1;
+      const $item = ctx.props.$item as typeof itemA;
+      const toggle = () => toggles.push($item);
+      return { $item, toggle };
+    }, { adapter: testReactivity, props: ['$item'] });
+
+    defineComponent(hostTag, () => ({ items }), { adapter: testReactivity });
+
+    await nextTick();
+
+    const elements = Array.from(document.querySelectorAll(childTag));
+    expect(elements.length).toBe(2);
+    expect(setupCalls).toBe(2);
+
+    const labels = Array.from(document.querySelectorAll(`${childTag} .label`));
+    const labelValues = labels.map((label) => label.textContent?.trim());
+    expect(labelValues).toContain('Alpha');
+    expect(labelValues).toContain('Beta');
+
+    const buttons = Array.from(document.querySelectorAll(`${childTag} button`)) as HTMLButtonElement[];
+    buttons[0]?.click();
+    expect(toggles).toHaveLength(1);
+    buttons[1]?.click();
+    expect(toggles).toHaveLength(2);
+    expect(toggles).toContain(itemA);
+    expect(toggles).toContain(itemB);
+  });
 });

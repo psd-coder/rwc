@@ -132,4 +132,52 @@ describe('x-portal directive', () => {
     const target = document.querySelector('#portal-el-target') as HTMLDivElement;
     expect(target.querySelector('.inline')?.textContent?.trim()).toBe('Inline');
   });
+
+  it('hydrates custom-element lists inside a portal', async () => {
+    const itemA = createStore({ id: 'a', text: 'Alpha' });
+    const itemB = createStore({ id: 'b', text: 'Beta' });
+    const items = createStore([itemA, itemB]);
+    const hostTag = nextTag('rwc-portal-hydrate');
+    const childTag = nextTag('rwc-portal-item');
+    const toggles: Array<typeof itemA> = [];
+
+    defineComponent(childTag, (ctx) => {
+      const $item = ctx.props.$item as typeof itemA;
+      const toggle = () => toggles.push($item);
+      return { $item, toggle };
+    }, { adapter: testReactivity, props: ['$item'] });
+
+    defineComponent(hostTag, () => ({ items }), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <div id="portal-hydrate-target"></div>
+      <${hostTag}>
+        <div class="todos" x-portal="#portal-hydrate-target">
+          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+            <span class="label" x-text="$item.text"></span>
+            <button x-on:click="toggle()">Toggle</button>
+          </${childTag}>
+          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+            <span class="label" x-text="$item.text"></span>
+            <button x-on:click="toggle()">Toggle</button>
+          </${childTag}>
+        </div>
+      </${hostTag}>
+    `;
+
+    await nextTick();
+
+    const target = document.querySelector('#portal-hydrate-target') as HTMLDivElement;
+    const labels = Array.from(target.querySelectorAll(`${childTag} .label`));
+    const labelValues = labels.map((label) => label.textContent?.trim());
+    expect(labelValues).toContain('Alpha');
+    expect(labelValues).toContain('Beta');
+
+    const buttons = Array.from(target.querySelectorAll(`${childTag} button`)) as HTMLButtonElement[];
+    buttons[0]?.click();
+    buttons[1]?.click();
+    expect(toggles).toHaveLength(2);
+    expect(toggles).toContain(itemA);
+    expect(toggles).toContain(itemB);
+  });
 });

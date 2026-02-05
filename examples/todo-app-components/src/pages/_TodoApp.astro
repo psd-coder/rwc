@@ -11,6 +11,15 @@ const {
   $canAdd,
   $emptyMessage
 } = getStores(DEFAULT_STATE);
+
+const filteredCount = $filteredItems.get().length;
+const itemsCount = $items.get().length;
+const completedCount = $completedTodos.get().length;
+
+const showEmptyState = filteredCount === 0;
+const showTodos = filteredCount > 0;
+const showStats = itemsCount > 0;
+const showClearCompleted = completedCount > 0;
 ---
 <todo-app x-cloak data-initial={JSON.stringify(DEFAULT_STATE)}>
   <h1>📝 Todo App — Components</h1>
@@ -48,32 +57,15 @@ const {
     </button>
   </div>
 
-  <template x-if="$filteredItems.length === 0">
-    <div class="empty-state">
-      <p x-text="$emptyMessage">{$emptyMessage.get()}</p>
-    </div>
-  </template>
+  <div class="empty-state" x-show="$filteredItems.length === 0" x-show-ssr={showEmptyState ? 'true' : 'false'}>
+    <p x-text="$emptyMessage">{$emptyMessage.get()}</p>
+  </div>
 
-  <div class="todos" x-show="$filteredItems.length > 0">
-    <template x-for="$item in $filteredItems" x-key="$item.id">
-      <todo-item x-prop:$item="$item" x-prop:$items="$items">
-        <div class="todo-item">
-          <input
-            type="checkbox"
-            class="todo-checkbox"
-            x-prop:checked="$item.completed"
-            x-on:change="toggle()">
-          <span class="todo-text" x-text="$item.text" x-class="{ completed: $item.completed }"></span>
-          <button class="btn-delete" x-on:click="remove()">
-            Delete
-          </button>
-        </div>
-      </todo-item>
-    </template>
+  <div class="todos" x-show="$filteredItems.length > 0" x-show-ssr={showTodos ? 'true' : 'false'}>
     {$filteredItems.get().map(($item) => {
       const todo = $item.get();
       return (
-        <todo-item x-prop:$item="$item" x-prop:$items="$items">
+        <todo-item x-for="$item in $filteredItems" x-key="$item.id" x-prop:$item="$item" x-prop:$items="$items">
           <div class="todo-item">
             <input
               type="checkbox"
@@ -96,7 +88,7 @@ const {
     })}
   </div>
 
-  <div class="stats" x-show="$items.length > 0">
+  <div class="stats" x-show="$items.length > 0" x-show-ssr={showStats ? 'true' : 'false'}>
     <span>
       <span x-text="$activeTodos.length">{$activeTodos.get().length}</span>
       <span x-text="$activeTodos.length === 1 ? 'item' : 'items'">{$activeTodos.get().length === 1 ? 'item' : 'items'}</span>
@@ -104,6 +96,7 @@ const {
     </span>
     <button
       x-show="$completedTodos.length > 0"
+      x-show-ssr={showClearCompleted ? 'true' : 'false'}
       x-on:click="clearCompleted()"
       style="background: transparent; color: #999; padding: 0;">
       Clear completed

@@ -23,11 +23,11 @@
 
     <p class="selection">
       Selected:
-      <strong x-text="selected.label || 'None'"></strong>
+      <strong x-text="selected.label || 'None'">None</strong>
     </p>
 
-    <div class="dropdown" x-portal="body" x-if="isOpen" x-attr:data-dropdown-for="hostId"
-      x-style:top="dropdownStyle.top" x-style:left="dropdownStyle.left" x-style:width="dropdownStyle.width">
+    <div class="dropdown" x-portal="body" x-if="isOpen" x-if-ssr="false" x-attr:data-dropdown-for="hostId"
+      x-style="dropdownStyle">
       <button class="option" x-on:click="select(option)" x-for="option in filtered" x-key="option.id">
         <span class="label" x-text="option.label"></span>
         <span class="code" x-text="option.code"></span>

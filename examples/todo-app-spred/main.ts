@@ -1,3 +1,5 @@
+import '../../src/style.css';
+
 import { defineComponent } from '../../src/index.ts';
 import { spred } from '../../src/adapters/spred.ts';
 import { signal } from '@spred/core';

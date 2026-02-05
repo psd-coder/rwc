@@ -1,8 +1,9 @@
 import type { BindingContext } from '../context';
 import { createChildContext } from '../context';
 import { setupTemplate } from './_utils';
+import type { ProcessOptions } from './registry';
 
-type DirectiveProcessor = (root: ParentNode, ctx: BindingContext) => void;
+type DirectiveProcessor = (root: ParentNode, ctx: BindingContext, options?: ProcessOptions) => void;
 
 export function processPortal(
   el: Element,
@@ -21,7 +22,7 @@ export function processPortal(
 
   const fragment = template.content.cloneNode(true) as DocumentFragment;
   const childCtx = createChildContext(ctx);
-  processDirectives(fragment, childCtx);
+  processDirectives(fragment, childCtx, { skipHydrated: true });
   const nodes = Array.from(fragment.childNodes);
   target.append(...nodes);
 

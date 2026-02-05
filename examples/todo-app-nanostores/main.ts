@@ -1,3 +1,5 @@
+import '../../src/style.css';
+
 import { atom, computed } from 'nanostores';
 import { defineComponent } from '../../src/index';
 import { nanostores } from '../../src/adapters/nanostores';

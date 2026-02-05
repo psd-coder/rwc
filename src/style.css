@@ -1,0 +1,6 @@
+[x-cloak],
+[x-show-ssr='false'],
+[x-if-ssr='false'],
+[x-portal] {
+  display: none !important;
+}

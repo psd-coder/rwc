@@ -26,8 +26,11 @@ export function defineComponent<P extends Record<string, unknown> = {}>(
   class RwcElement extends HTMLElement {
     private ctx: BindingContext | null = null;
     private cleanup = new Set<() => void>();
+    private initializing = false;
 
     connectedCallback() {
+      if (this.ctx || this.initializing) return;
+      this.initializing = true;
       const componentCtx = createContext<P>(this, this.cleanup, adapter);
       const init = (allowDefer: boolean) => {
         if (!this.isConnected) return;
@@ -57,6 +60,7 @@ export function defineComponent<P extends Record<string, unknown> = {}>(
         const scope = setup(componentCtx);
         this.ctx = { scope: { ...scope, $refs: componentCtx.$refs }, adapter, disposers: this.cleanup };
         processDirectives(this, this.ctx, { skipHydrated: true, skipRoot: hasComponentParent });
+        this.initializing = false;
       };
       queueMicrotask(() => init(true));
     }
@@ -68,6 +72,7 @@ export function defineComponent<P extends Record<string, unknown> = {}>(
       }
       this.ctx = null;
       this.cleanup.clear();
+      this.initializing = false;
     }
   }
 

@@ -12,10 +12,10 @@ import { processRef } from './ref';
 import { processShow } from './show';
 import { processStyle } from './style';
 import { processText } from './text';
-import { clearHydrationMarks, isHydratedElement } from './hydration';
+import { clearHydrationMarks, isHydratedElement, isHydratedWithinRoot } from './hydration';
 
 type DirectiveHandler = (el: Element, value: string, ctx: BindingContext, attrName: string) => void;
-type ProcessOptions = { skipHydrated?: boolean; skipRoot?: boolean };
+export type ProcessOptions = { skipHydrated?: boolean; skipRoot?: boolean; treatRootAsBoundary?: boolean };
 
 const handlers: Record<string, DirectiveHandler> = {
   'x-text': (el, value, ctx) => processText(el, value, ctx),
@@ -37,7 +37,7 @@ const prefixHandlers: Array<{ prefix: string; handler: DirectiveHandler }> = [
 ];
 
 export function processDirectives(root: ParentNode, ctx: BindingContext, options: ProcessOptions = {}) {
-  const { skipHydrated = false, skipRoot = false } = options;
+  const { skipHydrated = false, skipRoot = false, treatRootAsBoundary = false } = options;
   const elements: Element[] = [];
   if (root instanceof Element) {
     if (!skipRoot) {
@@ -54,7 +54,8 @@ export function processDirectives(root: ParentNode, ctx: BindingContext, options
     if (skipRoots.some((root) => root !== el && root.contains(el))) {
       continue;
     }
-    if (skipHydrated && isHydratedElement(el)) {
+    if (skipHydrated && (root instanceof Element ? isHydratedWithinRoot(el, root) : isHydratedElement(el))) {
+      skipRoots.push(el);
       continue;
     }
 
@@ -116,7 +117,7 @@ export function processDirectives(root: ParentNode, ctx: BindingContext, options
       }
     }
 
-    if (el.tagName.includes('-') && (!(root instanceof Element) || el !== root)) {
+    if (el.tagName.includes('-') && (!(root instanceof Element) || el !== root || treatRootAsBoundary)) {
       skipRoots.push(el);
     }
   }

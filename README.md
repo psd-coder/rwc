@@ -62,6 +62,7 @@ Wire it up in HTML:
 |---|---|
 | `ctx.host` | The component's host element |
 | `ctx.$refs` | Static element references collected before `setup` runs — see [x-ref](#x-ref) |
+| `ctx.props` | Props declared on the component and passed via `x-prop` |
 | `ctx.on(target, event, listener, options?)` | Adds an event listener with automatic cleanup on disconnect. `target` can be a single `EventTarget` or an array |
 | `ctx.effect(store, cb)` | Subscribes to a single store. `cb` is called immediately with the current value and on every subsequent change |
 | `ctx.effect([stores], cb)` | Subscribes to multiple stores. `cb` receives an array of all current values, called initially and whenever any store changes |
@@ -69,6 +70,36 @@ Wire it up in HTML:
 | `ctx.getElement(selector)` | Returns the first matching descendant. Throws if nothing matches |
 | `ctx.getElements(selector)` | Returns all matching descendants (empty array if none) |
 | `ctx.registerCleanup(fn)` | Registers a function to run when the component disconnects |
+
+## defineComponent options
+
+```ts
+defineComponent('my-comp', setup, { adapter, props: ['title'] });
+```
+
+| Option | Description |
+|---|---|
+| `adapter` | **Required.** Reactivity adapter implementation |
+| `props` | Optional list of prop names to expose on `ctx.props` |
+
+## Component composition
+
+Custom elements are directive boundaries. When a parent processes directives, it only runs directives on the custom element itself (like `x-prop`) and skips its children. The child component owns its own subtree and scope.
+
+Props are passed via `x-prop` and read from `ctx.props` in the child:
+
+```html
+<todo-item x-prop:$item="$item"></todo-item>
+```
+
+```ts
+defineComponent<{ $item: ItemAtom }>('todo-item', (ctx) => {
+  const $item = ctx.props.$item;
+  return { $item };
+}, { adapter: nanostores, props: ['$item'] });
+```
+
+`ctx.props` is ready before `setup` runs (after static refs are collected), so props are always available inside `setup`.
 
 ## Directives
 
@@ -141,7 +172,32 @@ Toggles `display: none` without mounting/unmounting — the DOM node stays alive
 <div x-show="isVisible">Always in the DOM</div>
 ```
 
-If the element already has `style="display: none"` at init time, that `none` is captured as the original value and `x-show` effectively becomes a no-op.
+If the element already has `style="display: none"` at init time, `x-show` treats it as an SSR-hidden state and restores the default display when the expression becomes truthy.
+
+**SSR visibility hints** — to avoid a flash of hidden/empty state before hydration, add server-evaluated SSR attributes and a CSS rule:
+
+```css
+[x-show-ssr='false'],
+[x-if-ssr='false'],
+[x-portal] { display: none !important; }
+```
+
+```html
+<div x-show="isVisible" x-show-ssr="false">...</div>
+<div x-if="isOpen" x-if-ssr="false">...</div>
+```
+
+When the expression becomes truthy, RWC removes the `x-show-ssr`/`x-if-ssr` attribute so the element can show. For `x-if`, the element is still mounted/unmounted as usual; the marker just controls pre-hydration visibility.
+
+### Styles
+
+RWC ships a small stylesheet with the defaults for `x-cloak`, `x-show-ssr`, `x-if-ssr`, and `x-portal`:
+
+```ts
+import 'rwc/style.css';
+```
+
+If you prefer, you can copy the rules into your own stylesheet instead.
 
 ### x-ref
 
@@ -226,6 +282,8 @@ Sets an element **property** directly (not an attribute). The value is assigned 
 <input type="checkbox" x-prop:checked="done" />
 ```
 
+On custom elements, store-valued props are passed through without unwrapping. If the child declares the prop in `defineComponent` options, it is exposed on `ctx.props`. Plain values are wrapped in an internal prop store so updates propagate reactively.
+
 ### x-class
 
 Two forms:
@@ -247,12 +305,13 @@ Static classes already on the element are preserved across updates.
 
 ### x-style
 
-Sets a single inline style property. Supports kebab-case names and CSS custom properties.
+Sets inline styles. Supports both a single property (`x-style:color`) and object bindings (`x-style="{ ... }"`). Kebab-case names and CSS custom properties are supported.
 
 ```html
 <div x-style:color="textColor"></div>
 <div x-style:background-color="bg"></div>
 <div x-style:--accent="brandColor"></div>
+<div x-style="{ display: isHidden ? 'none' : 'block', backgroundColor: bg }"></div>
 ```
 
 `false` or `null` removes the property.
@@ -270,6 +329,8 @@ Removes itself after the component initialises. Use alongside a CSS rule to prev
   <span x-text="name"></span>
 </div>
 ```
+
+You can also import the bundled stylesheet instead of defining your own rule.
 
 ## Expressions
 
@@ -340,6 +401,7 @@ A custom adapter can be created by implementing the three-method interface above
 |---|---|---|
 | `examples/todo-app-spred` | spred | Core directives, two-way binding, computed values |
 | `examples/todo-app-nanostores` | nanostores | Same app with a different adapter — demonstrates adapter-agnostic design |
+| `examples/todo-app-components` | nanostores | Astro demo for nested components and prop stores |
 | `examples/combobox` | — | `x-portal`, Floating UI integration, dynamic positioning |
 | `examples/astro-nanostores-todo` | nanostores | SSR with Astro, hydration, `data-initial` seeding |
 

@@ -21,7 +21,7 @@ describe('x-show directive', () => {
     expect(div.style.display).toBe('inline-block');
   });
 
-  it('restores the inline display captured at init', async () => {
+  it('restores a hidden inline display to the default when shown', async () => {
     const visible = createStore(true);
     const tag = nextTag('rwc-show-inline-none');
     defineComponent(tag, () => ({ visible }), { adapter: testReactivity });
@@ -30,13 +30,13 @@ describe('x-show directive', () => {
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
 
     await nextTick();
-    expect(div.style.display).toBe('none');
+    expect(div.style.display).toBe('');
 
     setStore(visible, false);
     expect(div.style.display).toBe('none');
 
     setStore(visible, true);
-    expect(div.style.display).toBe('none');
+    expect(div.style.display).toBe('');
   });
 
   it('restores empty inline display to allow CSS rules', async () => {
@@ -73,5 +73,21 @@ describe('x-show directive', () => {
 
     setStore(count, 2);
     expect(div.style.display).toBe('none');
+  });
+
+  it('clears SSR markers once shown', async () => {
+    const visible = createStore(false);
+    const tag = nextTag('rwc-show-ssr');
+    defineComponent(tag, () => ({ visible }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-show="visible" x-show-ssr="false"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.getAttribute('x-show-ssr')).toBe('false');
+    expect(div.style.display).toBe('none');
+
+    setStore(visible, true);
+    expect(div.hasAttribute('x-show-ssr')).toBe(false);
   });
 });
