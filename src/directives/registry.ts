@@ -25,7 +25,8 @@ const handlers: Record<string, DirectiveHandler> = {
   'x-show': (el, value, ctx) => processShow(el, value, ctx),
   'x-ref': (el, value, ctx) => processRef(el, value, ctx),
   'x-cloak': (el) => processCloak(el),
-  'x-portal': (el, value, ctx) => processPortal(el, value, ctx, processDirectives)
+  'x-portal': (el, value, ctx) => processPortal(el, value, ctx, processDirectives),
+  'x-style': (el, value, ctx, attrName) => processStyle(el, value, ctx, attrName)
 };
 
 const prefixHandlers: Array<{ prefix: string; handler: DirectiveHandler }> = [

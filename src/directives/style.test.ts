@@ -81,4 +81,46 @@ describe('x-style directive', () => {
     await nextTick();
     expect(div.style.getPropertyValue('--flag')).toBe('true');
   });
+
+  it('supports object literals on x-style', async () => {
+    const tag = nextTag('rwc-style-object-literal');
+    defineComponent(tag, () => ({}), { adapter: testReactivity });
+
+    document.body.innerHTML = `
+      <${tag}>
+        <div x-style="{ display: 'none', backgroundColor: 'red', '--accent': 'blue' }"></div>
+      </${tag}>
+    `;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.style.display).toBe('none');
+    expect(div.style.backgroundColor).toBe('red');
+    expect(div.style.getPropertyValue('--accent')).toBe('blue');
+  });
+
+  it('updates object styles reactively and removes missing keys', async () => {
+    const styles = createStore<Record<string, unknown> | null>({
+      color: 'red',
+      backgroundColor: 'yellow'
+    });
+    const tag = nextTag('rwc-style-object-store');
+    defineComponent(tag, () => ({ styles }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div x-style="styles"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.style.color).toBe('red');
+    expect(div.style.backgroundColor).toBe('yellow');
+
+    setStore(styles, { color: 'green', opacity: 0.5 });
+    expect(div.style.color).toBe('green');
+    expect(div.style.backgroundColor).toBe('');
+    expect(div.style.opacity).toBe('0.5');
+
+    setStore(styles, null);
+    expect(div.style.color).toBe('');
+    expect(div.style.opacity).toBe('');
+  });
 });
