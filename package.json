@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:bundle-size": "size-limit"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -33,6 +34,20 @@
   "files": [
     "dist"
   ],
+  "size-limit": [
+    {
+      "name": "core (minified)",
+      "path": "dist/index.js",
+      "brotli": false,
+      "limit": "21290 B"
+    },
+    {
+      "name": "core (gzip)",
+      "path": "dist/index.js",
+      "gzip": true,
+      "limit": "6879 B"
+    }
+  ],
   "dependencies": {
     "clsx": "^2.1.1"
   },
@@ -50,8 +65,10 @@
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.7.5",
+    "@size-limit/file": "^12.0.0",
     "@types/node": "^25.2.1",
     "happy-dom": "^20.4.0",
+    "size-limit": "^12.0.0",
     "terser": "^5.46.0",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3",
