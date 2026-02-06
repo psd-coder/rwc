@@ -29,35 +29,20 @@ export function processFor(
   processDirectives: DirectiveProcessor
 ) {
   const { itemName, indexName, listExpr } = parseForExpression(exprSource);
+  if (!(el instanceof HTMLTemplateElement)) {
+    throw new Error('x-for requires <template>');
+  }
   const keyExprSource = el.getAttribute('x-key');
   if (!keyExprSource) {
     throw new Error('x-for requires x-key');
   }
   const keyExpr = parse(keyExprSource);
-  const isTemplate = el instanceof HTMLTemplateElement;
-  let template: HTMLTemplateElement;
-  let parent: ParentNode | null = null;
-  let hydrationRoot: ChildNode | null = null;
-  const anchor = document.createComment('x-for');
-
-  if (isTemplate) {
-    const templateSetup = setupTemplate(el, 'x-for');
-    if (!templateSetup) return;
-    template = templateSetup.template;
-    parent = template.parentNode;
-  } else {
-    parent = el.parentNode;
-    if (!parent) return;
-    const clone = el.cloneNode(true) as Element;
-    clone.removeAttribute('x-for');
-    clone.removeAttribute('x-key');
-    template = document.createElement('template');
-    template.content.append(clone);
-    el.removeAttribute('x-for');
-    el.removeAttribute('x-key');
-    hydrationRoot = el;
-  }
+  const templateSetup = setupTemplate(el, 'x-for');
+  if (!templateSetup) return;
+  const template = templateSetup.template;
+  const parent = template.parentNode;
   if (!parent) return;
+  const anchor = document.createComment('x-for');
 
   const entries = new Map<unknown, Entry>();
   let hydrationAttempted = false;
@@ -79,15 +64,6 @@ export function processFor(
 
   const ensureAnchor = (refNode: ChildNode | null) => {
     parent.insertBefore(anchor, refNode);
-  };
-
-  const clearForAttrs = (nodes: Node[]) => {
-    for (const node of nodes) {
-      if (node instanceof Element) {
-        node.removeAttribute('x-for');
-        node.removeAttribute('x-key');
-      }
-    }
   };
 
   const bindEntryNodes = (nodes: Node[], childCtx: BindingContext) => {
@@ -148,73 +124,6 @@ export function processFor(
   const hydrateEntries = (items: unknown[]) => {
     if (hydrationAttempted) return;
     hydrationAttempted = true;
-
-    if (!isTemplate) {
-      if (!hydrationRoot) {
-        ensureAnchor(null);
-        return;
-      }
-
-      const groups: Node[][] = [];
-      let current: Node[] = [];
-      let patternIndex = 0;
-      let lastNode: ChildNode | null = null;
-      let node: ChildNode | null = hydrationRoot;
-
-      while (node) {
-        const next: ChildNode | null = node.nextSibling;
-        if (isIgnorableText(node)) {
-          current.push(node);
-          lastNode = node;
-          node = next;
-          continue;
-        }
-
-        const expected = templatePattern[patternIndex];
-        if (!expected || !matchesPattern(node, expected)) {
-          break;
-        }
-
-        current.push(node);
-        lastNode = node;
-        patternIndex += 1;
-
-        if (patternIndex === templatePattern.length) {
-          groups.push(current);
-          current = [];
-          patternIndex = 0;
-        }
-
-        node = next;
-      }
-
-      const refNode = lastNode ? lastNode.nextSibling : hydrationRoot.nextSibling;
-      const mismatch = templatePattern.length === 0 || patternIndex !== 0 || groups.length !== items.length;
-
-      if (mismatch) {
-        for (const nodes of groups) {
-          clearForAttrs(nodes);
-          markHydratedNodes(nodes);
-          for (const node of nodes) {
-            node.parentNode?.removeChild(node);
-          }
-        }
-        ensureAnchor(refNode);
-        return;
-      }
-
-      groups.forEach((nodes, index) => {
-        const scopeOverrides = createScopeOverrides(items[index], index);
-        const key = evaluateKey(scopeOverrides);
-        clearForAttrs(nodes);
-        const entry = createEntry(items[index], index, scopeOverrides, key, nodes);
-        entries.set(entry.key, entry);
-        markHydratedNodes(nodes);
-      });
-
-      ensureAnchor(refNode);
-      return;
-    }
 
     if (items.length === 0 || templatePattern.length === 0) {
       ensureAnchor(template.nextSibling);

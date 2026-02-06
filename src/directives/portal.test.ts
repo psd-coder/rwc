@@ -153,11 +153,17 @@ describe('x-portal directive', () => {
       <div id="portal-hydrate-target"></div>
       <${hostTag}>
         <div class="todos" x-portal="#portal-hydrate-target">
-          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+          <template x-for="$item in items" x-key="$item.id">
+            <${childTag} x-prop:$item="$item">
+              <span class="label" x-text="$item.text"></span>
+              <button x-on:click="toggle()">Toggle</button>
+            </${childTag}>
+          </template>
+          <${childTag} x-prop:$item="$item">
             <span class="label" x-text="$item.text"></span>
             <button x-on:click="toggle()">Toggle</button>
           </${childTag}>
-          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+          <${childTag} x-prop:$item="$item">
             <span class="label" x-text="$item.text"></span>
             <button x-on:click="toggle()">Toggle</button>
           </${childTag}>

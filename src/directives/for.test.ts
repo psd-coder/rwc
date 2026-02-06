@@ -354,36 +354,13 @@ describe('x-for directive', () => {
     expect(container.querySelectorAll('hr').length).toBe(3);
   });
 
-  it('supports non-template elements', async () => {
-    const items = createStore(['a', 'b']);
-    const tag = nextTag('rwc-for-el');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+  it('throws when used on non-template elements', () => {
+    const element = document.createElement('li');
+    element.setAttribute('x-for', 'item in items');
+    element.setAttribute('x-key', 'item');
+    const ctx = createBindingContext({ items: [] }, testReactivity);
 
-    document.body.innerHTML = `
-      <${tag}>
-        <ul>
-          <li x-for="item in items" x-key="item">
-            <span x-text="item"></span>
-          </li>
-        </ul>
-      </${tag}>
-    `;
-
-    await nextTick();
-
-    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
-    const lis = Array.from(list.querySelectorAll('li'));
-    expect(lis.length).toBe(2);
-    expect(lis[0].textContent?.trim()).toBe('a');
-    expect(lis[1].textContent?.trim()).toBe('b');
-
-    setStore(items, ['b', 'c']);
-    await nextTick();
-
-    const lisNext = Array.from(list.querySelectorAll('li'));
-    expect(lisNext.length).toBe(2);
-    expect(lisNext[0].textContent?.trim()).toBe('b');
-    expect(lisNext[1].textContent?.trim()).toBe('c');
+    expect(() => processFor(element, 'item in items', ctx, () => {})).toThrow(/x-for requires <template>/);
   });
 
   it('hydrates server-rendered custom-element lists', async () => {
@@ -405,11 +382,17 @@ describe('x-for directive', () => {
     document.body.innerHTML = `
       <${tag}>
         <div class="todos" x-if="items.length > 0">
-          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+          <template x-for="$item in items" x-key="$item.id">
+            <${childTag} x-prop:$item="$item">
+              <span class="label" x-text="$item.text"></span>
+              <button x-on:click="toggle()">Toggle</button>
+            </${childTag}>
+          </template>
+          <${childTag} x-prop:$item="$item">
             <span class="label" x-text="$item.text"></span>
             <button x-on:click="toggle()">Toggle</button>
           </${childTag}>
-          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+          <${childTag} x-prop:$item="$item">
             <span class="label" x-text="$item.text"></span>
             <button x-on:click="toggle()">Toggle</button>
           </${childTag}>
@@ -445,11 +428,17 @@ describe('x-for directive', () => {
     document.body.innerHTML = `
       <${hostTag}>
         <div class="todos">
-          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+          <template x-for="$item in items" x-key="$item.id">
+            <${childTag} x-prop:$item="$item">
+              <span class="label" x-text="$item.text"></span>
+              <button x-on:click="toggle()">Toggle</button>
+            </${childTag}>
+          </template>
+          <${childTag} x-prop:$item="$item">
             <span class="label" x-text="$item.text">Alpha</span>
             <button x-on:click="toggle()">Toggle</button>
           </${childTag}>
-          <${childTag} x-for="$item in items" x-key="$item.id" x-prop:$item="$item">
+          <${childTag} x-prop:$item="$item">
             <span class="label" x-text="$item.text">Beta</span>
             <button x-on:click="toggle()">Toggle</button>
           </${childTag}>

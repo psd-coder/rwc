@@ -114,11 +114,5 @@ defineComponent('combo-box', (ctx) => {
     select
   };
 
-  query.subscribe((value) => console.log('query:', value));
-  filtered.subscribe((value) => console.log('filtered:', value));
-  selected.subscribe((value) => console.log('selected:', value));
-  dropdownStyle.subscribe((value) => console.log('dropdownStyle:', value));
-  
-
   return state;
 }, { adapter: spred });

@@ -119,13 +119,15 @@ describe('component props', () => {
         <input x-ref="input" type="text" x-prop:value="$newTodo" />
         <button class="btn-add" x-on:click="addTodo()">Add</button>
         <div class="todos" x-show="$items.length > 0">
-          <${childTag} x-for="$item in $items" x-key="$item.id" x-prop:$item="$item">
-            <div class="todo-item">
-              <input type="checkbox" x-prop:checked="$item.completed" x-on:change="toggle()" />
-              <span class="todo-text" x-text="$item.text" x-class="{ completed: $item.completed }"></span>
-              <button class="btn-delete" x-on:click="remove()">Delete</button>
-            </div>
-          </${childTag}>
+          <template x-for="$item in $items" x-key="$item.id">
+            <${childTag} x-prop:$item="$item">
+              <div class="todo-item">
+                <input type="checkbox" x-prop:checked="$item.completed" x-on:change="toggle()" />
+                <span class="todo-text" x-text="$item.text" x-class="{ completed: $item.completed }"></span>
+                <button class="btn-delete" x-on:click="remove()">Delete</button>
+              </div>
+            </${childTag}>
+          </template>
         </div>
       </${parentTag}>
     `;

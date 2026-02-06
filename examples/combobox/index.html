@@ -28,10 +28,12 @@
 
     <div class="dropdown" x-portal="body" x-if="isOpen" x-if-ssr="false" x-attr:data-dropdown-for="hostId"
       x-style="dropdownStyle">
-      <button class="option" x-on:click="select(option)" x-for="option in filtered" x-key="option.id">
-        <span class="label" x-text="option.label"></span>
-        <span class="code" x-text="option.code"></span>
-      </button>
+      <template x-for="option in filtered" x-key="option.id">
+        <button class="option" x-on:click="select(option)">
+          <span class="label" x-text="option.label"></span>
+          <span class="code" x-text="option.code"></span>
+        </button>
+      </template>
       <p class="empty" x-show="filtered.length === 0">No matches.</p>
     </div>
   </combo-box>
