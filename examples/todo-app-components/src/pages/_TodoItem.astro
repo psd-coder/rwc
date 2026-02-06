@@ -1,0 +1,70 @@
+---
+import type { TodoItem } from './_store'
+
+type Props = {
+  todo: TodoItem
+}
+const { todo, ...restProps } = Astro.props;
+---
+
+<todo-item x-prop:$item="$item" x-prop:$items="$items" {...restProps}>
+  <div class="todo-item">
+    <input
+      type="checkbox"
+      class="todo-checkbox"
+      checked={todo.completed}
+      x-prop:checked="$item.completed"
+      x-on:change="toggle()">
+    <span
+      class={`todo-text${todo.completed ? ' completed' : ''}`}
+      x-text="$item.text"
+      x-class="{ completed: $item.completed }">
+      {todo.text}
+    </span>
+    <button class="btn-delete" x-on:click="remove()">
+      Delete
+    </button>
+  </div>
+</todo-item>
+<style>
+    .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+  }
+
+  .todo-item:hover {
+    background: #f9f9f9;
+  }
+
+  .todo-checkbox {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .todo-text {
+    flex: 1;
+    font-size: 1rem;
+  }
+
+  .todo-text.completed {
+    text-decoration: line-through;
+    color: #999;
+  }
+
+  .btn-delete {
+    padding: 0.5rem 1rem;
+    background: #f44336;
+    color: white;
+    font-size: 0.875rem;
+  }
+
+  .btn-delete:hover {
+    background: #da190b;
+  }
+</style>

@@ -1,5 +1,6 @@
 ---
 import { DEFAULT_STATE, getStores } from './_store';
+import TodoItem from './_TodoItem.astro';
 
 const {
   $items,
@@ -20,6 +21,7 @@ const showEmptyState = filteredCount === 0;
 const showTodos = filteredCount > 0;
 const showStats = itemsCount > 0;
 const showClearCompleted = completedCount > 0;
+const EMPTY_TODO = { id: -1, text: '', completed: false };
 ---
 <todo-app x-cloak data-initial={JSON.stringify(DEFAULT_STATE)}>
   <h1>📝 Todo App — Components</h1>
@@ -62,28 +64,13 @@ const showClearCompleted = completedCount > 0;
   </div>
 
   <div class="todos" x-show="$filteredItems.length > 0" x-show-ssr={showTodos ? 'true' : 'false'}>
+    <template x-for="$item in $filteredItems" x-key="$item.id">
+      <TodoItem todo={EMPTY_TODO} />
+    </template>
     {$filteredItems.get().map(($item) => {
       const todo = $item.get();
       return (
-        <todo-item x-for="$item in $filteredItems" x-key="$item.id" x-prop:$item="$item" x-prop:$items="$items">
-          <div class="todo-item">
-            <input
-              type="checkbox"
-              class="todo-checkbox"
-              checked={todo.completed}
-              x-prop:checked="$item.completed"
-              x-on:change="toggle()">
-            <span
-              class={`todo-text${todo.completed ? ' completed' : ''}`}
-              x-text="$item.text"
-              x-class="{ completed: $item.completed }">
-              {todo.text}
-            </span>
-            <button class="btn-delete" x-on:click="remove()">
-              Delete
-            </button>
-          </div>
-        </todo-item>
+        <TodoItem todo={todo} />
       );
     })}
   </div>
@@ -197,37 +184,11 @@ const showClearCompleted = completedCount > 0;
   }, { adapter: nanostores });
 </script>
 <style>
-  h1 {
-    margin-bottom: 1.5rem;
-    color: #333;
-  }
 
   .add-todo {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
-  }
-
-  input[type="text"] {
-    flex: 1;
-    padding: 0.75rem;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-
-  input[type="text"]:focus {
-    outline: none;
-    border-color: #e91e63;
-  }
-
-  button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background 0.2s;
   }
 
   .btn-add {
@@ -267,47 +228,6 @@ const showClearCompleted = completedCount > 0;
     list-style: none;
     padding: 0;
     margin: 0;
-  }
-
-  .todo-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border-bottom: 1px solid #eee;
-    transition: background 0.2s;
-  }
-
-  .todo-item:hover {
-    background: #f9f9f9;
-  }
-
-  .todo-checkbox {
-    width: 20px;
-    height: 20px;
-    margin: 0;
-    cursor: pointer;
-  }
-
-  .todo-text {
-    flex: 1;
-    font-size: 1rem;
-  }
-
-  .todo-text.completed {
-    text-decoration: line-through;
-    color: #999;
-  }
-
-  .btn-delete {
-    padding: 0.5rem 1rem;
-    background: #f44336;
-    color: white;
-    font-size: 0.875rem;
-  }
-
-  .btn-delete:hover {
-    background: #da190b;
   }
 
   .stats {
