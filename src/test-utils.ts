@@ -1,11 +1,28 @@
 import type { ReactivityAdapter, StoreValueTemplate } from './adapters/types';
 
-export type Store<T> = { value: T; subs: Set<(value: T) => void> };
+export type Store<T> = {
+  value: T;
+  subs: Set<(value: T) => void>;
+  set: (value: T) => void;
+};
 interface TestStoreValueTemplate extends StoreValueTemplate {
   readonly value: this['store'] extends Store<infer TValue> ? TValue : unknown;
 }
 
-export const createStore = <T,>(value: T): Store<T> => ({ value, subs: new Set() });
+export const createStore = <T,>(value: T): Store<T> => {
+  const subs = new Set<(next: T) => void>();
+  const store: Store<T> = {
+    value,
+    subs,
+    set(next: T) {
+      store.value = next;
+      for (const sub of subs) {
+        sub(next);
+      }
+    },
+  };
+  return store;
+};
 
 export const testReactivity: ReactivityAdapter<Store<unknown>, TestStoreValueTemplate> = {
   isStore: (value): value is Store<unknown> =>
@@ -20,8 +37,7 @@ export const testReactivity: ReactivityAdapter<Store<unknown>, TestStoreValueTem
 };
 
 export const setStore = <T,>(store: Store<T>, value: T) => {
-  store.value = value;
-  for (const sub of store.subs) sub(value);
+  store.set(value);
 };
 
 export const nextTick = () => Promise.resolve().then(() => Promise.resolve());

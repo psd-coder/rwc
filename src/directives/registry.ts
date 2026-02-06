@@ -1,5 +1,6 @@
 import type { BindingContext } from '../context';
 import { processAttr } from './attr';
+import { processBind } from './bind';
 import { processClass } from './class';
 import { processCloak } from './cloak';
 import { processFor } from './for';
@@ -32,6 +33,7 @@ const handlers: Record<string, DirectiveHandler> = {
 
 const prefixHandlers: Array<{ prefix: string; handler: DirectiveHandler }> = [
   { prefix: 'x-attr:', handler: processAttr },
+  { prefix: 'x-bind:', handler: processBind },
   { prefix: 'x-prop:', handler: processProp },
   { prefix: 'x-class:', handler: processClass },
   { prefix: 'x-style:', handler: processStyle },
