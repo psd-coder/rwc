@@ -1,18 +1,36 @@
-import { collectStaticRefs, createContext, setupProps, type BindingContext, type ComponentContext } from './context';
+import {
+  collectStaticRefs,
+  createContext,
+  setupProps,
+  type BindingContext,
+  type ComponentContext,
+  type ComponentRefs
+} from './context';
 import type { ReactivityAdapter } from './adapters/types';
 import { processDirectives } from './directives/registry';
 
-export type SetupFn<P extends Record<string, unknown> = {}> = (ctx: ComponentContext<P>) => Record<string, unknown>;
+export type SetupFn<
+  P extends Record<string, unknown> = {},
+  Refs extends ComponentRefs = Record<string, HTMLElement>,
+  Adapter extends ReactivityAdapter = ReactivityAdapter,
+> = (ctx: ComponentContext<P, Refs, Adapter>) => Record<string, unknown>;
 
-export interface DefineComponentOptions<P extends Record<string, unknown> = {}> {
-  adapter: ReactivityAdapter;
+export interface DefineComponentOptions<
+  P extends Record<string, unknown> = {},
+  Adapter extends ReactivityAdapter = ReactivityAdapter,
+> {
+  adapter: Adapter;
   props?: Array<keyof P & string>;
 }
 
-export function defineComponent<P extends Record<string, unknown> = {}>(
+export function defineComponent<
+  P extends Record<string, unknown> = {},
+  Refs extends ComponentRefs = Record<string, HTMLElement>,
+  Adapter extends ReactivityAdapter = ReactivityAdapter,
+>(
   name: string,
-  setup: SetupFn<P>,
-  options: DefineComponentOptions<P>
+  setup: SetupFn<P, Refs, NoInfer<Adapter>>,
+  options: DefineComponentOptions<P, Adapter>
 ) {
   const adapter = options?.adapter;
   if (!adapter) {
@@ -31,7 +49,7 @@ export function defineComponent<P extends Record<string, unknown> = {}>(
     connectedCallback() {
       if (this.ctx || this.initializing) return;
       this.initializing = true;
-      const componentCtx = createContext<P>(this, this.cleanup, adapter);
+      const componentCtx = createContext<P, Refs, Adapter>(this, this.cleanup, adapter);
       const init = (allowDefer: boolean) => {
         if (!this.isConnected) return;
         let ancestor = this.parentElement;

@@ -1,10 +1,16 @@
-import type { ReactivityAdapter } from './adapters/types';
+import type { AdapterStoreValue, ReactivityAdapter } from './adapters/types';
 
-export interface ComponentContext<P extends Record<string, unknown> = {}> {
+export type ComponentRefs = Record<string, HTMLElement | undefined>;
+
+export interface ComponentContext<
+  P extends Record<string, unknown> = {},
+  Refs extends ComponentRefs = Record<string, HTMLElement>,
+  Adapter extends ReactivityAdapter = ReactivityAdapter,
+> {
   props: P;
   host: HTMLElement;
   registerCleanup: (fn: () => void) => void;
-  $refs: Record<string, HTMLElement>;
+  $refs: Refs;
   getElement: <E extends HTMLElement>(selector: string) => E;
   getElements: <E extends HTMLElement>(selector: string) => E[];
   dispatch: <T>(name: string, detail?: T, options?: CustomEventInit<T>) => boolean;
@@ -15,11 +21,11 @@ export interface ComponentContext<P extends Record<string, unknown> = {}> {
     options?: boolean | AddEventListenerOptions
   ) => void;
   effect: {
-    <T>(store: T, callback: (value: unknown) => void): void;
     <Stores extends unknown[]>(
-      stores: [...Stores],
-      callback: (values: { [K in keyof Stores]: unknown }) => void
+      stores: readonly [...Stores],
+      callback: (values: { [K in keyof Stores]: AdapterStoreValue<Adapter, Stores[K]> }) => void
     ): void;
+    <Store>(store: Store, callback: (value: AdapterStoreValue<Adapter, Store>) => void): void;
   };
 }
 
@@ -44,34 +50,39 @@ export function createChildContext(
   return createBindingContext({ ...parent.scope, ...scopeOverrides }, parent.adapter, new Set());
 }
 
-export function createContext<P extends Record<string, unknown> = {}>(
+export function createContext<
+  P extends Record<string, unknown> = {},
+  Refs extends ComponentRefs = Record<string, HTMLElement>,
+  Adapter extends ReactivityAdapter = ReactivityAdapter,
+>(
   host: HTMLElement,
   disposers: Set<() => void>,
-  adapter: ReactivityAdapter
-): ComponentContext<P> {
-  const refs: Record<string, HTMLElement> = {};
+  adapter: Adapter
+): ComponentContext<P, Refs, Adapter> {
+  const refs: ComponentRefs = {};
   const props = {} as P;
+  const baseAdapter = adapter as ReactivityAdapter;
 
-  const effect = ((storeOrStores: unknown | unknown[], callback: (value: unknown) => void) => {
+  const effect = ((storeOrStores: unknown | readonly unknown[], callback: (value: unknown) => void) => {
     if (Array.isArray(storeOrStores)) {
       const stores = storeOrStores;
-      const readValues = () => stores.map(store => adapter.get(store));
+      const readValues = () => stores.map((store) => baseAdapter.get(store));
       callback(readValues());
       for (const store of stores) {
-        const unsub = adapter.subscribe(store, () => callback(readValues()));
+        const unsub = baseAdapter.subscribe(store, () => callback(readValues()));
         disposers.add(unsub);
       }
       return;
     }
-    const unsub = adapter.subscribe(storeOrStores, callback);
+    const unsub = baseAdapter.subscribe(storeOrStores, callback);
     disposers.add(unsub);
-  }) as ComponentContext['effect'];
+  }) as ComponentContext<P, Refs, Adapter>['effect'];
 
   return {
     props,
     host,
     registerCleanup: (fn) => disposers.add(fn),
-    $refs: refs,
+    $refs: refs as Refs,
     getElement: <E extends HTMLElement>(selector: string) => {
       const el = host.querySelector(selector);
       if (!el) throw new Error(`Element not found: ${selector}`);
@@ -142,7 +153,7 @@ export function setupProps<P extends Record<string, unknown>>(
   }
 }
 
-export function collectStaticRefs(host: HTMLElement, refs: Record<string, HTMLElement>) {
+export function collectStaticRefs(host: HTMLElement, refs: ComponentRefs) {
   const candidates = host.querySelectorAll('[x-ref]');
   for (const el of candidates) {
     if (el.closest('template, [x-if], [x-for], [x-portal]')) continue;

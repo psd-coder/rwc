@@ -1,18 +1,22 @@
-import type { ReactivityAdapter } from './types';
+import type { ReactivityAdapter, StoreValueTemplate } from './types';
 
-type NanoStore = {
-  get: () => unknown;
-  subscribe: (listener: (value: unknown) => void) => () => void;
+type NanoStore<T = unknown> = {
+  get: () => T;
+  subscribe: (listener: (value: T) => void) => () => void;
 };
 
-export const nanostores: ReactivityAdapter<NanoStore> = {
-  isStore(value: unknown): value is NanoStore {
+interface NanoStoreValueTemplate extends StoreValueTemplate {
+  readonly value: this['store'] extends NanoStore<infer TValue> ? TValue : unknown;
+}
+
+export const nanostores: ReactivityAdapter<NanoStore<unknown>, NanoStoreValueTemplate> = {
+  isStore(value: unknown): value is NanoStore<unknown> {
     return !!value && typeof value === 'object' && 'subscribe' in value && 'get' in value;
   },
-  get(store) {
+  get<T>(store: NanoStore<T>) {
     return store.get();
   },
-  subscribe(store, callback) {
+  subscribe<T>(store: NanoStore<T>, callback: (value: T) => void) {
     return store.subscribe(callback);
   }
 };

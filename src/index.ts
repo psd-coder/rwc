@@ -1,3 +1,3 @@
 export { defineComponent } from './define';
-export type { ReactivityAdapter } from './adapters/types';
-export type { ComponentContext } from './context';
+export type { AdapterStoreValue, ReactivityAdapter, ResolveStoreValue, StoreValueTemplate } from './adapters/types';
+export type { ComponentContext, ComponentRefs } from './context';
