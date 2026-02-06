@@ -3,7 +3,7 @@ import { defineComponent } from '../define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-class directive', () => {
-  it('merges classes with clsx input', async () => {
+  it('merges object-based dynamic classes with base classes', async () => {
     const isActive = createStore(true);
     const tag = nextTag('rwc-class');
     defineComponent(tag, () => ({ isActive }), { adapter: testReactivity });
@@ -17,6 +17,25 @@ describe('x-class directive', () => {
 
     setStore(isActive, false);
     expect(div.classList.contains('active')).toBe(false);
+  });
+
+  it('removes base classes when object syntax sets them to false', async () => {
+    const completed = createStore(false);
+    const tag = nextTag('rwc-class-base-override');
+    defineComponent(tag, () => ({ completed }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div class="base completed" x-class="{ completed: completed }"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.classList.contains('base')).toBe(true);
+    expect(div.classList.contains('completed')).toBe(false);
+
+    setStore(completed, true);
+    expect(div.classList.contains('completed')).toBe(true);
+
+    setStore(completed, false);
+    expect(div.classList.contains('completed')).toBe(false);
   });
 
   it('toggles class modifiers', async () => {
@@ -34,7 +53,7 @@ describe('x-class directive', () => {
     expect(div.classList.contains('highlight')).toBe(false);
   });
 
-  it('supports array syntax with clsx', async () => {
+  it('supports one-level array syntax', async () => {
     const size = createStore('lg');
     const tag = nextTag('rwc-class-array');
     defineComponent(tag, () => ({ size }), { adapter: testReactivity });
@@ -49,6 +68,28 @@ describe('x-class directive', () => {
     setStore(size, 'sm');
     expect(div.classList.contains('lg')).toBe(false);
     expect(div.classList.contains('sm')).toBe(true);
+  });
+
+  it('supports string/object entries in arrays and filters falsy values', async () => {
+    const size = createStore('lg');
+    const active = createStore(false);
+    const tag = nextTag('rwc-class-array-mixed');
+    defineComponent(tag, () => ({ size, active }), { adapter: testReactivity });
+
+    document.body.innerHTML = `<${tag}><div class="base active" x-class="[size, active && 'active', { active: active, pending: false }, '', false]"></div></${tag}>`;
+    const div = document.querySelector(`${tag} div`) as HTMLDivElement;
+
+    await nextTick();
+    expect(div.classList.contains('base')).toBe(true);
+    expect(div.classList.contains('lg')).toBe(true);
+    expect(div.classList.contains('active')).toBe(false);
+    expect(div.classList.contains('pending')).toBe(false);
+
+    setStore(active, true);
+    expect(div.classList.contains('active')).toBe(true);
+
+    setStore(size, '');
+    expect(div.classList.contains('lg')).toBe(false);
   });
 
   it('supports conditional expressions', async () => {

@@ -48,9 +48,6 @@
       "limit": "6879 B"
     }
   ],
-  "dependencies": {
-    "clsx": "^2.1.1"
-  },
   "peerDependencies": {
     "@spred/core": "^0.41.5",
     "nanostores": "^1.1.0"

@@ -294,14 +294,14 @@ Two forms:
 <span x-class:active="isActive"></span>
 ```
 
-**Merge dynamic classes with existing static classes** (uses [clsx](https://github.com/lukeed/clsx)):
+**Merge dynamic classes with existing static classes**:
 
 ```html
 <div class="btn" x-class="{ primary: isPrimary, lg: size === 'lg' }"></div>
 <div x-class="['card', size]"></div>
 ```
 
-Static classes already on the element are preserved across updates.
+Supported values are `string`, `object`, or a one-level `array` of strings/objects. Falsy values are filtered. For object syntax, falsy keys remove matching static classes from the base class list.
 
 ### x-style
 
