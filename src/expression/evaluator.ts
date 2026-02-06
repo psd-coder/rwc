@@ -115,62 +115,28 @@ function evaluateCall(
   const args = expr.args.map(arg => evaluate(arg, scope, specials, resolve, isStore));
 
   if (expr.callee.type === 'member') {
-    const object = evaluateCallObject(expr.callee.object, scope, specials, resolve, isStore, true) as
-      | Record<PropertyKey, unknown>
-      | null
-      | undefined;
-    const fn = getCallableProperty(object, expr.callee.property);
-    if (typeof fn === 'function') {
-      return fn.apply(object, args);
-    }
-
-    const fallbackObject = evaluateCallObject(
+    return evaluateMemberCallTarget(
       expr.callee.object,
+      expr.callee.property,
+      args,
       scope,
       specials,
       resolve,
-      isStore,
-      false
-    ) as
-      | Record<PropertyKey, unknown>
-      | null
-      | undefined;
-    const fallbackFn = getCallableProperty(fallbackObject, expr.callee.property);
-    if (typeof fallbackFn === 'function') {
-      return fallbackFn.apply(fallbackObject, args);
-    }
-
-    throw new Error('Call target is not a function');
+      isStore
+    );
   }
 
   if (expr.callee.type === 'index') {
     const index = evaluate(expr.callee.index, scope, specials, resolve, isStore) as PropertyKey;
-    const object = evaluateCallObject(expr.callee.object, scope, specials, resolve, isStore, true) as
-      | Record<PropertyKey, unknown>
-      | null
-      | undefined;
-    const fn = getCallableProperty(object, index);
-    if (typeof fn === 'function') {
-      return fn.apply(object, args);
-    }
-
-    const fallbackObject = evaluateCallObject(
+    return evaluateMemberCallTarget(
       expr.callee.object,
+      index,
+      args,
       scope,
       specials,
       resolve,
-      isStore,
-      false
-    ) as
-      | Record<PropertyKey, unknown>
-      | null
-      | undefined;
-    const fallbackFn = getCallableProperty(fallbackObject, index);
-    if (typeof fallbackFn === 'function') {
-      return fallbackFn.apply(fallbackObject, args);
-    }
-
-    throw new Error('Call target is not a function');
+      isStore
+    );
   }
 
   const fn = evaluate(expr.callee, scope, specials, resolve, isStore);
@@ -178,6 +144,36 @@ function evaluateCall(
     throw new Error('Call target is not a function');
   }
   return fn(...args);
+}
+
+function evaluateMemberCallTarget(
+  objectExpr: Expr,
+  property: PropertyKey,
+  args: unknown[],
+  scope: Record<string, unknown>,
+  specials: Record<string, unknown>,
+  resolve: ValueResolver,
+  isStore: StorePredicate
+): unknown {
+  const object = evaluateCallObject(objectExpr, scope, specials, resolve, isStore, true) as
+    | Record<PropertyKey, unknown>
+    | null
+    | undefined;
+  const fn = getCallableProperty(object, property);
+  if (typeof fn === 'function') {
+    return fn.apply(object, args);
+  }
+
+  const fallbackObject = evaluateCallObject(objectExpr, scope, specials, resolve, isStore, false) as
+    | Record<PropertyKey, unknown>
+    | null
+    | undefined;
+  const fallbackFn = getCallableProperty(fallbackObject, property);
+  if (typeof fallbackFn === 'function') {
+    return fallbackFn.apply(fallbackObject, args);
+  }
+
+  throw new Error('Call target is not a function');
 }
 
 function evaluateCallObject(

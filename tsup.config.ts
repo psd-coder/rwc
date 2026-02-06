@@ -16,6 +16,12 @@ export default defineConfig({
   format: ['esm'],
   dts: true,
   minify: "terser",
+  terserOptions: {
+    module: true,
+    compress: {
+      passes: 1
+    }
+  },
   sourcemap: true,
   splitting: false,
   clean: true,

@@ -26,23 +26,12 @@ export function bindExpression(
   specials: Specials = {}
 ) {
   const expr = parse(source);
-  let lastValue: unknown = bindExpressionUninitialized;
-  const run = () => {
-    const nextValue = evaluateExpr(expr, ctx, specials);
-    if (Object.is(lastValue, nextValue)) return;
-    lastValue = nextValue;
-    callback(nextValue);
-  };
-
-  run();
-
-  const deps = collectDependencies(expr, ctx.scope, value => ctx.adapter.isStore(value));
-  for (const dep of deps) {
-    const unsubscribe = ctx.adapter.subscribe(dep, run);
-    ctx.disposers.add(unsubscribe);
-  }
-
-  return run;
+  return bindParsedExpression(
+    expr,
+    ctx,
+    callback,
+    () => evaluateExpr(expr, ctx, specials)
+  );
 }
 
 export function bindExpressionRaw(
@@ -52,12 +41,26 @@ export function bindExpressionRaw(
   specials: Specials = {}
 ) {
   const expr = parse(source);
-  let lastValue: unknown = bindExpressionUninitialized;
-  const run = () => {
-    const nextValue =
+  return bindParsedExpression(
+    expr,
+    ctx,
+    callback,
+    () =>
       expr.type === 'ident'
         ? (expr.name in specials ? specials[expr.name] : ctx.scope[expr.name])
-        : evaluateExpr(expr, ctx, specials);
+        : evaluateExpr(expr, ctx, specials)
+  );
+}
+
+function bindParsedExpression(
+  expr: Expr,
+  ctx: BindingContext,
+  callback: (value: unknown) => void,
+  compute: () => unknown
+) {
+  let lastValue: unknown = bindExpressionUninitialized;
+  const run = () => {
+    const nextValue = compute();
     if (Object.is(lastValue, nextValue)) return;
     lastValue = nextValue;
     callback(nextValue);

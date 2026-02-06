@@ -23,6 +23,7 @@ const handlers: Record<string, DirectiveHandler> = {
   'x-if': (el, value, ctx) => processIf(el, value, ctx, processDirectives),
   'x-for': (el, value, ctx) => processFor(el, value, ctx, processDirectives),
   'x-show': (el, value, ctx) => processShow(el, value, ctx),
+  'x-class': (el, value, ctx, attrName) => processClass(el, value, ctx, attrName),
   'x-ref': (el, value, ctx) => processRef(el, value, ctx),
   'x-cloak': (el) => processCloak(el),
   'x-portal': (el, value, ctx) => processPortal(el, value, ctx, processDirectives),
@@ -102,11 +103,6 @@ export function processDirectives(root: ParentNode, ctx: BindingContext, options
       const handler = handlers[attr.name];
       if (handler) {
         handler(el, attr.value, ctx, attr.name);
-        continue;
-      }
-
-      if (attr.name === 'x-class') {
-        processClass(el, attr.value, ctx, attr.name);
         continue;
       }
 

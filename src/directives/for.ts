@@ -81,6 +81,15 @@ export function processFor(
     parent.insertBefore(anchor, refNode);
   };
 
+  const clearForAttrs = (nodes: Node[]) => {
+    for (const node of nodes) {
+      if (node instanceof Element) {
+        node.removeAttribute('x-for');
+        node.removeAttribute('x-key');
+      }
+    }
+  };
+
   const bindEntryNodes = (nodes: Node[], childCtx: BindingContext) => {
     for (const node of nodes) {
       if (node instanceof Element) {
@@ -184,12 +193,9 @@ export function processFor(
 
       if (mismatch) {
         for (const nodes of groups) {
+          clearForAttrs(nodes);
+          markHydratedNodes(nodes);
           for (const node of nodes) {
-            if (node instanceof Element) {
-              node.removeAttribute('x-for');
-              node.removeAttribute('x-key');
-            }
-            markHydratedNodes([node]);
             node.parentNode?.removeChild(node);
           }
         }
@@ -200,12 +206,7 @@ export function processFor(
       groups.forEach((nodes, index) => {
         const scopeOverrides = createScopeOverrides(items[index], index);
         const key = evaluateKey(scopeOverrides);
-        for (const node of nodes) {
-          if (node instanceof Element) {
-            node.removeAttribute('x-for');
-            node.removeAttribute('x-key');
-          }
-        }
+        clearForAttrs(nodes);
         const entry = createEntry(items[index], index, scopeOverrides, key, nodes);
         entries.set(entry.key, entry);
         markHydratedNodes(nodes);
