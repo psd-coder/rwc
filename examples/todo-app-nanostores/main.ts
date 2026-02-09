@@ -1,8 +1,10 @@
 import '../../src/style.css';
 
 import { atom, computed } from 'nanostores';
-import { defineComponent } from '../../src/index';
+import { createRwc } from '../../src/index';
 import { nanostores } from '../../src/adapters/nanostores';
+
+const { defineComponent } = createRwc({ adapter: nanostores });
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -44,10 +46,10 @@ defineComponent('todo-app-nanostores', (ctx) => {
     if (!text) return;
     $todos.set([...$todos.get(), { id: Date.now(), text, completed: false }]);
     $newTodo.set('');
-    ctx.$refs.input?.focus();
+    ctx.refs.input?.focus();
   };
 
-  ctx.on(ctx.$refs.input, 'keydown', (event: KeyboardEvent) => {
+  ctx.on(ctx.refs.input, 'keydown', (event: KeyboardEvent) => {
     if (event.key === 'Enter') {
       addTodo();
     }
@@ -87,4 +89,4 @@ defineComponent('todo-app-nanostores', (ctx) => {
     clearCompleted,
     setFilter
   };
-}, { adapter: nanostores });
+});

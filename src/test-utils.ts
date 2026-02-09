@@ -1,4 +1,4 @@
-import type { ReactivityAdapter, StoreValueTemplate } from './adapters/types';
+import type { ReactivityAdapter, StoreShapeTemplate, StoreValueTemplate } from './adapters/types';
 
 export type Store<T> = {
   value: T;
@@ -7,6 +7,12 @@ export type Store<T> = {
 };
 interface TestStoreValueTemplate extends StoreValueTemplate {
   readonly value: this['store'] extends Store<infer TValue> ? TValue : unknown;
+}
+interface TestReadableStoreTemplate extends StoreShapeTemplate {
+  readonly store: Store<this['value']>;
+}
+interface TestWritableStoreTemplate extends StoreShapeTemplate {
+  readonly store: Store<this['value']>;
 }
 
 export const createStore = <T,>(value: T): Store<T> => {
@@ -24,16 +30,25 @@ export const createStore = <T,>(value: T): Store<T> => {
   return store;
 };
 
-export const testReactivity: ReactivityAdapter<Store<unknown>, TestStoreValueTemplate> = {
+export const testReactivity: ReactivityAdapter<
+  Store<unknown>,
+  TestStoreValueTemplate,
+  TestReadableStoreTemplate,
+  TestWritableStoreTemplate
+> = {
   isStore: (value): value is Store<unknown> =>
-    !!value && typeof value === 'object' && 'value' in value && 'subs' in value,
+    !!value && typeof value === "object" && "value" in value && "subs" in value,
   get: <T,>(store: Store<T>) => store.value,
   subscribe: <T,>(store: Store<T>, callback: (value: T) => void) => {
     const handler = (value: T) => callback(value);
     store.subs.add(handler);
     callback(store.value);
     return () => store.subs.delete(handler);
-  }
+  },
+  create: <T,>(initial: T) => createStore(initial),
+  set: <T,>(store: Store<T>, value: T) => {
+    store.set(value);
+  },
 };
 
 export const setStore = <T,>(store: Store<T>, value: T) => {

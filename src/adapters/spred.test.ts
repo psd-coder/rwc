@@ -65,4 +65,12 @@ describe('spred adapter', () => {
     expect(callback1).toHaveBeenCalledWith(4);
     expect(callback2).toHaveBeenCalledWith(4);
   });
+
+  it("creates writable signals and sets values", () => {
+    const signal = spred.create(2);
+    expect(spred.get(signal)).toBe(2);
+
+    spred.set(signal, 6);
+    expect(spred.get(signal)).toBe(6);
+  });
 });

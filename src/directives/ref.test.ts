@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-ref directive', () => {
   it('exposes static refs during setup', async () => {
     const tag = nextTag('rwc-ref-setup');
     defineComponent(tag, (ctx) => {
-      (ctx.host as { __ref?: HTMLElement }).__ref = ctx.$refs.field;
+      (ctx.host as { __ref?: HTMLElement }).__ref = ctx.refs.field;
       return {};
-    }, { adapter: testReactivity });
+    });
 
     document.body.innerHTML = `<${tag}><input x-ref="field" /></${tag}>`;
     await nextTick();
@@ -24,18 +24,18 @@ describe('x-ref directive', () => {
     defineComponent(tag, (ctx) => {
       (ctx.host as { __ctx?: unknown }).__ctx = ctx;
       return {};
-    }, { adapter: testReactivity });
+    });
 
     document.body.innerHTML = `<${tag}><input x-ref="field" /></${tag}>`;
     await nextTick();
 
-    const host = document.querySelector(tag) as HTMLElement & { __ctx?: { $refs: Record<string, HTMLElement> } };
+    const host = document.querySelector(tag) as HTMLElement & { __ctx?: { refs: Record<string, HTMLElement> } };
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;
 
-    expect(host.__ctx?.$refs.field).toBe(input);
+    expect(host.__ctx?.refs.field).toBe(input);
 
     host.remove();
-    expect(host.__ctx?.$refs.field).toBeUndefined();
+    expect(host.__ctx?.refs.field).toBeUndefined();
   });
 
   it('registers and cleans up dynamic refs inside x-if', async () => {
@@ -43,9 +43,9 @@ describe('x-ref directive', () => {
     const tag = nextTag('rwc-ref-if');
     let refs: Record<string, HTMLElement> = {};
     defineComponent(tag, (ctx) => {
-      refs = ctx.$refs;
+      refs = ctx.refs;
       return { show };
-    }, { adapter: testReactivity });
+    });
 
     document.body.innerHTML = `
       <${tag}>
@@ -71,7 +71,7 @@ describe('x-ref directive', () => {
     defineComponent(tag, (ctx) => {
       (ctx.host as { __ctx?: unknown }).__ctx = ctx;
       return {};
-    }, { adapter: testReactivity });
+    });
 
     document.body.innerHTML = `
       <${tag}>
@@ -81,11 +81,11 @@ describe('x-ref directive', () => {
     `;
     await nextTick();
 
-    const host = document.querySelector(tag) as HTMLElement & { __ctx?: { $refs: Record<string, HTMLElement> } };
+    const host = document.querySelector(tag) as HTMLElement & { __ctx?: { refs: Record<string, HTMLElement> } };
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
 
-    expect(host.__ctx?.$refs.first).toBe(input);
-    expect(host.__ctx?.$refs.second).toBe(button);
+    expect(host.__ctx?.refs.first).toBe(input);
+    expect(host.__ctx?.refs.second).toBe(button);
   });
 });

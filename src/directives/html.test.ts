@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-html directive', () => {
   it('renders literal HTML strings', async () => {
     const tag = nextTag('rwc-html-literal');
-    defineComponent(tag, () => ({}), { adapter: testReactivity });
+    defineComponent(tag, () => ({}));
 
     document.body.innerHTML = `<${tag}><div x-html="'<strong>hello</strong>'"></div></${tag}>`;
 
@@ -18,7 +18,7 @@ describe('x-html directive', () => {
   it('renders null and undefined as empty string', async () => {
     const content = createStore<unknown>(null);
     const tag = nextTag('rwc-html-nullish');
-    defineComponent(tag, () => ({ content }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ content }));
 
     document.body.innerHTML = `<${tag}><div x-html="content"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
@@ -36,7 +36,7 @@ describe('x-html directive', () => {
   it('cleans up subscriptions on disconnect', async () => {
     const content = createStore('<span>Hi</span>');
     const tag = nextTag('rwc-html-cleanup');
-    defineComponent(tag, () => ({ content }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ content }));
 
     document.body.innerHTML = `<${tag}><div x-html="content"></div></${tag}>`;
     const host = document.querySelector(tag) as HTMLElement;
@@ -51,7 +51,7 @@ describe('x-html directive', () => {
   it('renders and updates innerHTML', async () => {
     const content = createStore('<span>Hi</span>');
     const tag = nextTag('rwc-html');
-    defineComponent(tag, () => ({ content }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ content }));
 
     document.body.innerHTML = `<${tag}><div x-html="content"></div></${tag}>`;
 

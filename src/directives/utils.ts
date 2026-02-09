@@ -1,13 +1,14 @@
-import type { BindingContext } from '../context';
-import { collectDependencies } from '../expression/deps';
-import { evaluate } from '../expression/evaluator';
-import { parse } from '../expression/parser';
-import type { Expr } from '../expression/types';
+import type { BindingContext } from "../context";
+import { collectDependencies } from "../expression/deps";
+import { evaluate } from "../expression/evaluator";
+import { parse } from "../expression/parser";
+import type { Expr } from "../expression/types";
+import { isReactiveStore, readReactiveStoreValue, subscribeReactiveStore } from "../stores";
 
 export type Specials = Record<string, unknown>;
 
 const resolveValue = (ctx: BindingContext, value: unknown) =>
-  ctx.adapter.isStore(value) ? ctx.adapter.get(value) : value;
+  isReactiveStore(value, ctx.adapter) ? readReactiveStoreValue(value, ctx.adapter) : value;
 
 export function evaluateExpr(expr: Expr, ctx: BindingContext, specials: Specials = {}) {
   return evaluate(
@@ -15,7 +16,7 @@ export function evaluateExpr(expr: Expr, ctx: BindingContext, specials: Specials
     ctx.scope,
     specials,
     value => resolveValue(ctx, value),
-    value => ctx.adapter.isStore(value)
+    value => isReactiveStore(value, ctx.adapter),
   );
 }
 
@@ -23,22 +24,17 @@ export function bindExpression(
   source: string,
   ctx: BindingContext,
   callback: (value: unknown) => void,
-  specials: Specials = {}
+  specials: Specials = {},
 ) {
   const expr = parse(source);
-  return bindParsedExpression(
-    expr,
-    ctx,
-    callback,
-    () => evaluateExpr(expr, ctx, specials)
-  );
+  return bindParsedExpression(expr, ctx, callback, () => evaluateExpr(expr, ctx, specials));
 }
 
 export function bindExpressionRaw(
   source: string,
   ctx: BindingContext,
   callback: (value: unknown) => void,
-  specials: Specials = {}
+  specials: Specials = {},
 ) {
   const expr = parse(source);
   return bindParsedExpression(
@@ -46,9 +42,9 @@ export function bindExpressionRaw(
     ctx,
     callback,
     () =>
-      expr.type === 'ident'
+      expr.type === "ident"
         ? (expr.name in specials ? specials[expr.name] : ctx.scope[expr.name])
-        : evaluateExpr(expr, ctx, specials)
+        : evaluateExpr(expr, ctx, specials),
   );
 }
 
@@ -56,25 +52,25 @@ function bindParsedExpression(
   expr: Expr,
   ctx: BindingContext,
   callback: (value: unknown) => void,
-  compute: () => unknown
+  compute: () => unknown,
 ) {
   let lastValue: unknown = bindExpressionUninitialized;
-  const run = () => {
+  const run = (force = false) => {
     const nextValue = compute();
-    if (Object.is(lastValue, nextValue)) return;
+    if (!force && Object.is(lastValue, nextValue)) return;
     lastValue = nextValue;
     callback(nextValue);
   };
 
   run();
 
-  const deps = collectDependencies(expr, ctx.scope, value => ctx.adapter.isStore(value));
+  const deps = collectDependencies(expr, ctx.scope, value => isReactiveStore(value, ctx.adapter));
   for (const dep of deps) {
-    const unsubscribe = ctx.adapter.subscribe(dep, run);
+    const unsubscribe = subscribeReactiveStore(dep, ctx.adapter, () => run());
     ctx.disposers.add(unsubscribe);
   }
 
   return run;
 }
 
-const bindExpressionUninitialized = Symbol('bindExpressionUninitialized');
+const bindExpressionUninitialized = Symbol("bindExpressionUninitialized");

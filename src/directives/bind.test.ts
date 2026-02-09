@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { defineComponent } from "../define";
+import { defineComponent } from "../test-define";
 import { createStore, nextTag, nextTick, setStore, testReactivity } from "../test-utils";
 
 describe("x-bind directive", () => {
   it("syncs input value both ways with shorthand store targets", async () => {
     const title = createStore("alpha");
     const tag = nextTag("rwc-bind-value");
-    defineComponent(tag, () => ({ title }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ title }));
 
     document.body.innerHTML = `<${tag}><input x-bind:value="title" /></${tag}>`;
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;
@@ -25,7 +25,7 @@ describe("x-bind directive", () => {
   it("uses change event for checked bindings by default", async () => {
     const checked = createStore(false);
     const tag = nextTag("rwc-bind-checked");
-    defineComponent(tag, () => ({ checked }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ checked }));
 
     document.body.innerHTML = `<${tag}><input type="checkbox" x-bind:checked="checked" /></${tag}>`;
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;
@@ -51,7 +51,7 @@ describe("x-bind directive", () => {
         setterCalls.push(next);
         setStore(title, String(next).trim());
       },
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `<${tag}><input x-bind:value="{ get: title + '!', set: setTitle }" /></${tag}>`;
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;
@@ -78,7 +78,7 @@ describe("x-bind directive", () => {
         }
         setStore(value, String(next));
       },
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -104,7 +104,7 @@ describe("x-bind directive", () => {
   it("throws for shorthand bindings without writable targets", async () => {
     const title = createStore("alpha");
     const tag = nextTag("rwc-bind-invalid");
-    defineComponent(tag, () => ({ title }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ title }));
 
     document.body.innerHTML = `<${tag}><input x-bind:value="title + '!'" /></${tag}>`;
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;

@@ -2,6 +2,7 @@ import type { BindingContext } from "../context";
 import { collectDependencies } from "../expression/deps";
 import { parse } from "../expression/parser";
 import type { Expr, ObjectExpr } from "../expression/types";
+import { isReactiveStore, subscribeReactiveStore } from "../stores";
 import { evaluateExpr, type Specials } from "./utils";
 
 const PREFIX = "x-bind:";
@@ -92,9 +93,9 @@ function bindGetter(expr: Expr, ctx: BindingContext, callback: (value: unknown) 
 
   run();
 
-  const deps = collectDependencies(expr, ctx.scope, (value) => ctx.adapter.isStore(value));
+  const deps = collectDependencies(expr, ctx.scope, (value) => isReactiveStore(value, ctx.adapter));
   for (const dep of deps) {
-    const unsubscribe = ctx.adapter.subscribe(dep, run);
+    const unsubscribe = subscribeReactiveStore(dep, ctx.adapter, run);
     ctx.disposers.add(unsubscribe);
   }
 }

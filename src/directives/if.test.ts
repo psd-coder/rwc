@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-if directive', () => {
@@ -7,7 +7,7 @@ describe('x-if directive', () => {
     const show = createStore(true);
     const count = createStore(0);
     const tag = nextTag('rwc-if');
-    defineComponent(tag, () => ({ show, count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show, count }));
 
     document.body.innerHTML = `<${tag}><template x-if="show"><span x-text="count"></span></template></${tag}>`;
     await nextTick();
@@ -35,7 +35,7 @@ describe('x-if directive', () => {
   it('supports templates with multiple root nodes', async () => {
     const show = createStore(true);
     const tag = nextTag('rwc-if-multi');
-    defineComponent(tag, () => ({ show }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -59,7 +59,7 @@ describe('x-if directive', () => {
   it('starts unmounted when expression is initially falsy', async () => {
     const show = createStore(false);
     const tag = nextTag('rwc-if-false-init');
-    defineComponent(tag, () => ({ show }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show }));
 
     document.body.innerHTML = `<${tag}><template x-if="show"><span>Hi</span></template></${tag}>`;
     await nextTick();
@@ -77,7 +77,7 @@ describe('x-if directive', () => {
     const outer = createStore(true);
     const inner = createStore(true);
     const tag = nextTag('rwc-if-nested');
-    defineComponent(tag, () => ({ outer, inner }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ outer, inner }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -107,7 +107,7 @@ describe('x-if directive', () => {
     const name = createStore('Alice');
     const title = createStore('greeting');
     const tag = nextTag('rwc-if-codir-text-attr');
-    defineComponent(tag, () => ({ show, name, title }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show, name, title }));
 
     document.body.innerHTML = `<${tag}><span x-if="show" x-text="name" x-attr:title="title"></span></${tag}>`;
     await nextTick();
@@ -140,7 +140,7 @@ describe('x-if directive', () => {
     const show = createStore(true);
     const active = createStore(true);
     const tag = nextTag('rwc-if-codir-class');
-    defineComponent(tag, () => ({ show, active }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show, active }));
 
     document.body.innerHTML = `<${tag}><div class="card" x-if="show" x-class:active="active"></div></${tag}>`;
     await nextTick();
@@ -170,7 +170,7 @@ describe('x-if directive', () => {
       show,
       count,
       inc() { setStore(count, count.value + 1); }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `<${tag}><button x-if="show" x-on:click="inc" x-text="count"></button></${tag}>`;
     await nextTick();
@@ -200,7 +200,7 @@ describe('x-if directive', () => {
     const show = createStore(true);
     const count = createStore(1);
     const tag = nextTag('rwc-if-el');
-    defineComponent(tag, () => ({ show, count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show, count }));
 
     document.body.innerHTML = `<${tag}><p class="note" x-if="show"><span x-text="count"></span></p></${tag}>`;
     await nextTick();
@@ -226,7 +226,7 @@ describe('x-if directive', () => {
     const show = createStore(true);
     const label = createStore('Ready');
     const tag = nextTag('rwc-if-hydrate');
-    defineComponent(tag, () => ({ show, label }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show, label }));
 
     document.body.innerHTML = `<${tag}><div class="box" x-if="show" x-text="label"></div></${tag}>`;
     const initial = document.querySelector(`${tag} .box`) as HTMLDivElement;
@@ -251,7 +251,7 @@ describe('x-if directive', () => {
   it('clears SSR markers when mounted', async () => {
     const show = createStore(false);
     const tag = nextTag('rwc-if-ssr');
-    defineComponent(tag, () => ({ show }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show }));
 
     document.body.innerHTML = `<${tag}><div x-if="show" x-if-ssr="false"></div></${tag}>`;
     await nextTick();

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-class directive', () => {
   it('merges object-based dynamic classes with base classes', async () => {
     const isActive = createStore(true);
     const tag = nextTag('rwc-class');
-    defineComponent(tag, () => ({ isActive }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ isActive }));
 
     document.body.innerHTML = `<${tag}><div class="base" x-class="{ active: isActive }"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
@@ -22,7 +22,7 @@ describe('x-class directive', () => {
   it('removes base classes when object syntax sets them to false', async () => {
     const completed = createStore(false);
     const tag = nextTag('rwc-class-base-override');
-    defineComponent(tag, () => ({ completed }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ completed }));
 
     document.body.innerHTML = `<${tag}><div class="base completed" x-class="{ completed: completed }"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
@@ -41,7 +41,7 @@ describe('x-class directive', () => {
   it('toggles class modifiers', async () => {
     const visible = createStore(true);
     const tag = nextTag('rwc-class-mod');
-    defineComponent(tag, () => ({ visible }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ visible }));
 
     document.body.innerHTML = `<${tag}><div x-class:highlight="visible"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
@@ -56,7 +56,7 @@ describe('x-class directive', () => {
   it('supports one-level array syntax', async () => {
     const size = createStore('lg');
     const tag = nextTag('rwc-class-array');
-    defineComponent(tag, () => ({ size }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ size }));
 
     document.body.innerHTML = `<${tag}><div x-class="['btn', size]"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
@@ -74,7 +74,7 @@ describe('x-class directive', () => {
     const size = createStore('lg');
     const active = createStore(false);
     const tag = nextTag('rwc-class-array-mixed');
-    defineComponent(tag, () => ({ size, active }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ size, active }));
 
     document.body.innerHTML = `<${tag}><div class="base active" x-class="[size, active && 'active', { active: active, pending: false }, '', false]"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
@@ -95,7 +95,7 @@ describe('x-class directive', () => {
   it('supports conditional expressions', async () => {
     const count = createStore(5);
     const tag = nextTag('rwc-class-conditional');
-    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ count }));
 
     document.body.innerHTML = `<${tag}><div x-class="count > 3 ? 'high' : 'low'"></div></${tag}>`;
     const div = document.querySelector(`${tag} div`) as HTMLDivElement;
@@ -112,7 +112,7 @@ describe('x-class directive', () => {
   it('keeps base classes stable across x-for rebinds', async () => {
     const todos = createStore([{ id: 1, completed: false }]);
     const tag = nextTag('rwc-class-for');
-    defineComponent(tag, () => ({ todos }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ todos }));
 
     document.body.innerHTML = `<${tag}><template x-for="todo in todos" x-key="todo.id"><span class="todo-text" x-class="{ completed: todo.completed }"></span></template></${tag}>`;
     await nextTick();

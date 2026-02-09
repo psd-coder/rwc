@@ -32,7 +32,7 @@ defineComponent('todo-app', (ctx) => {
     if (!value) return;
     $items.set([...$items.get(), { id: Date.now(), text: value }]);
     $draft.set('');
-    ctx.$refs.input?.focus();
+    ctx.refs.input?.focus();
   };
 
   return { $items, $draft, add };
@@ -61,7 +61,7 @@ Wire it up in HTML:
 | Property / method | Description |
 |---|---|
 | `ctx.host` | The component's host element |
-| `ctx.$refs` | Static element references collected before `setup` runs — see [x-ref](#x-ref) |
+| `ctx.refs` | Static element references collected before `setup` runs — see [x-ref](#x-ref) |
 | `ctx.props` | Props declared on the component and passed via `x-prop` |
 | `ctx.on(target, event, listener, options?)` | Adds an event listener with automatic cleanup on disconnect. `target` can be a single `EventTarget` or an array |
 | `ctx.effect(store, cb)` | Subscribes to a single store. `cb` is called immediately with the current value and on every subsequent change |
@@ -162,7 +162,7 @@ Additional details:
 - Non-array values are silently treated as an empty list.
 - Duplicate keys throw at runtime.
 - Templates may contain multiple root nodes per iteration.
-- Works on a normal element too: `<li x-for="item in items" x-key="item.id">`.
+- `x-for` must be placed on a `<template>`.
 
 ### x-show
 
@@ -201,15 +201,15 @@ If you prefer, you can copy the rules into your own stylesheet instead.
 
 ### x-ref
 
-Registers an element in `$refs`.
+Registers an element in `ctx.refs`.
 
-**Static refs** — elements *not* inside `x-if`, `x-for`, `x-portal`, or `<template>` — are collected before `setup` runs, so they are available immediately as `ctx.$refs`:
+**Static refs** — elements *not* inside `x-if`, `x-for`, `x-portal`, or `<template>` — are collected before `setup` runs, so they are available immediately as `ctx.refs`:
 
 ```html
 <input x-ref="email" />
 ```
 
-**Dynamic refs** — elements inside conditional or loop directives — are added to `$refs` when the containing block mounts and removed when it unmounts. They share the same `$refs` object.
+**Dynamic refs** — elements inside conditional or loop directives — are added to `ctx.refs` when the containing block mounts and removed when it unmounts. They share the same refs object.
 
 ### x-portal
 
@@ -283,6 +283,43 @@ Sets an element **property** directly (not an attribute). The value is assigned 
 ```
 
 On custom elements, store-valued props are passed through without unwrapping. If the child declares the prop in `defineComponent` options, it is exposed on `ctx.props`. Plain values are wrapped in an internal prop store so updates propagate reactively.
+
+### x-bind
+
+Two-way property binding. `x-bind` writes the current value to the element property and writes user changes back.
+
+```html
+<input x-bind:value="title" />
+<input type="checkbox" x-bind:checked="done" />
+```
+
+Shorthand form expects the expression to resolve to a writable store target (for example, an object with `set(value)`).
+
+For custom setter logic, use object syntax with both `get` and `set`:
+
+```html
+<input x-bind:value="{ get: title + '!', set: setTitle }" />
+<input x-bind:value="{ get: title, set: setTitle($value, $event) }" />
+```
+
+Setter specials:
+
+| Variable | Value |
+|---|---|
+| `$value` | current element property value |
+| `$event` | native event instance |
+| `$el` | bound element |
+
+Default event is `input`, except:
+- `x-bind:checked` uses `change`
+- `<select x-bind:...>` uses `change`
+- checkbox/radio/file inputs use `change`
+
+You can override the event with one modifier:
+
+```html
+<input x-bind:value.change="title" />
+```
 
 ### x-class
 

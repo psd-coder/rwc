@@ -1,7 +1,9 @@
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 import { signal } from '@spred/core';
-import { defineComponent } from '../../src/index';
+import { createRwc } from '../../src/index';
 import { spred } from '../../src/adapters/spred';
+
+const { defineComponent } = createRwc({ adapter: spred });
 
 type Option = { id: string; label: string; code: string };
 
@@ -35,7 +37,7 @@ defineComponent('combo-box', (ctx) => {
   };
 
   const updatePosition = async () => {
-    const input = ctx.$refs.input as HTMLInputElement | undefined;
+    const input = ctx.refs.input as HTMLInputElement | undefined;
     const dropdown = document.querySelector(`[data-dropdown-for="${hostId}"]`) as HTMLElement | null;
     if (!input || !dropdown) return;
 
@@ -56,7 +58,7 @@ defineComponent('combo-box', (ctx) => {
     isOpen.set(true);
     queueMicrotask(async () => {
       await updatePosition();
-      const input = ctx.$refs.input as HTMLInputElement | undefined;
+      const input = ctx.refs.input as HTMLInputElement | undefined;
       const dropdown = document.querySelector(`[data-dropdown-for="${hostId}"]`) as HTMLElement | null;
       if (!input || !dropdown) return;
       cleanupAuto?.();
@@ -115,4 +117,4 @@ defineComponent('combo-box', (ctx) => {
   };
 
   return state;
-}, { adapter: spred });
+});

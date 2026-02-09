@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defineComponent } from './define';
+import { createRwc } from './define';
+import { defineComponent } from './test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from './test-utils';
 
 describe('defineComponent', () => {
@@ -8,7 +9,7 @@ describe('defineComponent', () => {
     defineComponent(tag, (ctx) => {
       expect(ctx.host).toBeInstanceOf(HTMLElement);
       return {};
-    }, { adapter: testReactivity });
+    });
 
     const el = document.createElement(tag);
     document.body.append(el);
@@ -24,7 +25,7 @@ describe('defineComponent', () => {
         (ctx.host as HTMLElement).dataset.cleaned = 'true';
       });
       return {};
-    }, { adapter: testReactivity });
+    });
 
     const el = document.createElement(tag);
     document.body.append(el);
@@ -44,7 +45,7 @@ describe('defineComponent', () => {
         cleaned += 1;
       });
       return {};
-    }, { adapter: testReactivity });
+    });
 
     const el = document.createElement(tag);
     document.body.append(el);
@@ -55,15 +56,10 @@ describe('defineComponent', () => {
 
   it('silently ignores double registration of the same tag', () => {
     const tag = nextTag('rwc-double');
-    defineComponent(tag, () => ({}), { adapter: testReactivity });
+    defineComponent(tag, () => ({}));
     // Second call must not throw
-    defineComponent(tag, () => ({}), { adapter: testReactivity });
+    defineComponent(tag, () => ({}));
     expect(customElements.get(tag)).toBeDefined();
-  });
-
-  it('throws when adapter is missing', () => {
-    const tag = nextTag('rwc-no-adapter');
-    expect(() => defineComponent(tag, () => ({}), { adapter: undefined as any })).toThrow(/[Aa]dapter/);
   });
 
   it('skips initialization if element is disconnected before microtask fires', async () => {
@@ -72,7 +68,7 @@ describe('defineComponent', () => {
     defineComponent(tag, () => {
       setupCalled = true;
       return {};
-    }, { adapter: testReactivity });
+    });
 
     const el = document.createElement(tag);
     document.body.append(el);
@@ -84,7 +80,7 @@ describe('defineComponent', () => {
   it('updates directive bindings on store changes', async () => {
     const count = createStore(1);
     const tag = nextTag('rwc-text-define');
-    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ count }));
     document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
 
     const span = document.querySelector(`${tag} span`) as HTMLSpanElement;
@@ -93,5 +89,25 @@ describe('defineComponent', () => {
 
     setStore(count, 2);
     expect(span.textContent).toBe('2');
+  });
+
+  it('creates adapter-scoped defineComponent via createRwc', async () => {
+    const { defineComponent: defineWithAdapter } = createRwc({ adapter: testReactivity });
+    const count = createStore(1);
+    const tag = nextTag('rwc-runtime-define');
+
+    defineWithAdapter(tag, () => ({ count }));
+    document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
+
+    const span = document.querySelector(`${tag} span`) as HTMLSpanElement;
+    await nextTick();
+    expect(span.textContent).toBe('1');
+
+    setStore(count, 2);
+    expect(span.textContent).toBe('2');
+  });
+
+  it('throws when createRwc adapter is missing', () => {
+    expect(() => createRwc({ adapter: undefined as any })).toThrow(/[Aa]dapter/);
   });
 });

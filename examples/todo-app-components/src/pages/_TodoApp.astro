@@ -93,9 +93,11 @@ const EMPTY_TODO = { id: -1, text: '', completed: false };
 
 <script>
   import { atom, type WritableAtom } from 'nanostores';
-  import { defineComponent } from '../../../../src/index';
+  import { createRwc } from '../../../../src/index';
   import { nanostores } from '../../../../src/adapters/nanostores';
   import { getStores, type InitialData, type Filter, type ItemAtom } from './_store';
+
+  const { defineComponent } = createRwc({ adapter: nanostores });
 
   type ItemStore = WritableAtom<ItemAtom[]>;
 
@@ -122,7 +124,7 @@ const EMPTY_TODO = { id: -1, text: '', completed: false };
     };
 
     return { $item, toggle, remove };
-  }, { adapter: nanostores, props: ['$item', '$items'] });
+  }, { props: ['$item', '$items'] });
 
   defineComponent('todo-app', (ctx) => {
     const initial = parseInitial(ctx.host.dataset.initial);
@@ -148,10 +150,10 @@ const EMPTY_TODO = { id: -1, text: '', completed: false };
       if (!text) return;
       $items.set([...$items.get(), atom({ id: Date.now(), text, completed: false })]);
       $newTodo.set('');
-      ctx.$refs.input?.focus();
+      ctx.refs.input?.focus();
     };
 
-    ctx.on(ctx.$refs.input, 'keydown', (event: KeyboardEvent) => {
+    ctx.on(ctx.refs.input, 'keydown', (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         addTodo();
       }
@@ -181,7 +183,7 @@ const EMPTY_TODO = { id: -1, text: '', completed: false };
       clearCompleted,
       setFilter
     };
-  }, { adapter: nanostores });
+  });
 </script>
 <style>
 

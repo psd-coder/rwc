@@ -1,21 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+import { atom, type WritableAtom } from "nanostores";
 import { nanostores } from './nanostores';
 
 const createStore = <T,>(initial: T) => {
-  let value = initial;
-  const subs = new Set<(next: T) => void>();
-  return {
-    get: () => value,
-    subscribe: (callback: (next: T) => void) => {
-      subs.add(callback);
-      callback(value);
-      return () => subs.delete(callback);
-    },
-    set: (next: T) => {
-      value = next;
-      for (const sub of subs) sub(value);
-    }
-  };
+  return atom(initial) as WritableAtom<T>;
 };
 
 describe('nanostores adapter', () => {
@@ -64,5 +52,13 @@ describe('nanostores adapter', () => {
     store.set(5);
     expect(callback1).toHaveBeenCalledWith(5);
     expect(callback2).toHaveBeenCalledWith(5);
+  });
+
+  it("creates writable stores and sets values", () => {
+    const store = nanostores.create(10);
+    expect(nanostores.get(store)).toBe(10);
+
+    nanostores.set(store, 25);
+    expect(nanostores.get(store)).toBe(25);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createBindingContext } from '../context';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 import { processPortal } from './portal';
 
@@ -8,7 +8,7 @@ describe('x-portal directive', () => {
   it('moves content to target and cleans up', async () => {
     const label = createStore('Hello');
     const tag = nextTag('rwc-portal');
-    defineComponent(tag, () => ({ label }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ label }));
 
     document.body.innerHTML = `
       <div id="portal-target"></div>
@@ -37,7 +37,7 @@ describe('x-portal directive', () => {
     const show = createStore(true);
     const label = createStore('Yo');
     const tag = nextTag('rwc-portal-if');
-    defineComponent(tag, () => ({ show, label }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ show, label }));
 
     document.body.innerHTML = `
       <div id="portal-if-target"></div>
@@ -73,7 +73,7 @@ describe('x-portal directive', () => {
 
   it('supports body as a target', async () => {
     const tag = nextTag('rwc-portal-body');
-    defineComponent(tag, () => ({}), { adapter: testReactivity });
+    defineComponent(tag, () => ({}));
 
     document.body.innerHTML = `
       <${tag}>
@@ -90,8 +90,8 @@ describe('x-portal directive', () => {
   it('supports multiple portals to the same target', async () => {
     const tagA = nextTag('rwc-portal-a');
     const tagB = nextTag('rwc-portal-b');
-    defineComponent(tagA, () => ({}), { adapter: testReactivity });
-    defineComponent(tagB, () => ({}), { adapter: testReactivity });
+    defineComponent(tagA, () => ({}));
+    defineComponent(tagB, () => ({}));
 
     document.body.innerHTML = `
       <div id="portal-multi-target"></div>
@@ -116,7 +116,7 @@ describe('x-portal directive', () => {
   it('supports non-template elements', async () => {
     const label = createStore('Inline');
     const tag = nextTag('rwc-portal-el');
-    defineComponent(tag, () => ({ label }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ label }));
 
     document.body.innerHTML = `
       <div id="portal-el-target"></div>
@@ -141,13 +141,13 @@ describe('x-portal directive', () => {
     const childTag = nextTag('rwc-portal-item');
     const toggles: Array<typeof itemA> = [];
 
-    defineComponent(childTag, (ctx) => {
-      const $item = ctx.props.$item as typeof itemA;
+    defineComponent<{ $item: unknown }>(childTag, (ctx) => {
+      const $item = ctx.props.$item as unknown as typeof itemA;
       const toggle = () => toggles.push($item);
       return { $item, toggle };
-    }, { adapter: testReactivity, props: ['$item'] });
+    }, { props: ['$item'] });
 
-    defineComponent(hostTag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(hostTag, () => ({ items }));
 
     document.body.innerHTML = `
       <div id="portal-hydrate-target"></div>

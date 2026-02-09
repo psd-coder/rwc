@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createBindingContext } from '../context';
 import { processFor } from './for';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-for directive', () => {
@@ -19,7 +19,7 @@ describe('x-for directive', () => {
       { id: 'b' }
     ]);
     const tag = nextTag('rwc-for');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -62,7 +62,7 @@ describe('x-for directive', () => {
       { id: 'b' }
     ]);
     const tag = nextTag('rwc-for-add-remove');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -91,7 +91,7 @@ describe('x-for directive', () => {
   it('clears rendered nodes when the list becomes empty', async () => {
     const items = createStore([{ id: 'a' }]);
     const tag = nextTag('rwc-for-empty');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -115,7 +115,7 @@ describe('x-for directive', () => {
   it('supports index aliases', async () => {
     const items = createStore(['a', 'b']);
     const tag = nextTag('rwc-for-index');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -137,7 +137,7 @@ describe('x-for directive', () => {
   it('does not interfere with sibling elements', async () => {
     const items = createStore([{ id: 'a' }, { id: 'b' }]);
     const tag = nextTag('rwc-for-sibling');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -163,7 +163,7 @@ describe('x-for directive', () => {
       { id: 'b', label: 'Beta' }
     ]);
     const tag = nextTag('rwc-for-hydrate');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -207,7 +207,7 @@ describe('x-for directive', () => {
       { id: 'b', label: 'Beta', done: false }
     ]);
     const tag = nextTag('rwc-for-hydrate-directives');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -252,7 +252,7 @@ describe('x-for directive', () => {
       { id: 'b' }
     ]);
     const tag = nextTag('rwc-for-dup');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -272,7 +272,7 @@ describe('x-for directive', () => {
   it('treats non-array values as an empty list', async () => {
     const items = createStore<unknown>(null);
     const tag = nextTag('rwc-for-nonarray');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -299,7 +299,7 @@ describe('x-for directive', () => {
     const label = createStore('hello');
     const items = createStore([{ id: 'a' }]);
     const tag = nextTag('rwc-for-dispose');
-    defineComponent(tag, () => ({ items, label }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items, label }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -331,7 +331,7 @@ describe('x-for directive', () => {
   it('renders multiple root nodes per iteration', async () => {
     const items = createStore(['a', 'b']);
     const tag = nextTag('rwc-for-multi-root');
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -371,13 +371,13 @@ describe('x-for directive', () => {
     const childTag = nextTag('rwc-item-ssr');
     const toggles: Array<typeof itemA> = [];
 
-    defineComponent(childTag, (ctx) => {
-      const $item = ctx.props.$item as typeof itemA;
+    defineComponent<{ $item: unknown }>(childTag, (ctx) => {
+      const $item = ctx.props.$item as unknown as typeof itemA;
       const toggle = () => toggles.push($item);
       return { $item, toggle };
-    }, { adapter: testReactivity, props: ['$item'] });
+    }, { props: ['$item'] });
 
-    defineComponent(tag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -446,14 +446,14 @@ describe('x-for directive', () => {
       </${hostTag}>
     `;
 
-    defineComponent(childTag, (ctx) => {
+    defineComponent<{ $item: unknown }>(childTag, (ctx) => {
       setupCalls += 1;
-      const $item = ctx.props.$item as typeof itemA;
+      const $item = ctx.props.$item as unknown as typeof itemA;
       const toggle = () => toggles.push($item);
       return { $item, toggle };
-    }, { adapter: testReactivity, props: ['$item'] });
+    }, { props: ['$item'] });
 
-    defineComponent(hostTag, () => ({ items }), { adapter: testReactivity });
+    defineComponent(hostTag, () => ({ items }));
 
     await nextTick();
 

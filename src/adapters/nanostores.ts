@@ -1,22 +1,37 @@
-import type { ReactivityAdapter, StoreValueTemplate } from './types';
-
-type NanoStore<T = unknown> = {
-  get: () => T;
-  subscribe: (listener: (value: T) => void) => () => void;
-};
+import { atom, type ReadableAtom, type WritableAtom } from "nanostores";
+import type { ReactivityAdapter, StoreShapeTemplate, StoreValueTemplate } from "./types";
 
 interface NanoStoreValueTemplate extends StoreValueTemplate {
-  readonly value: this['store'] extends NanoStore<infer TValue> ? TValue : unknown;
+  readonly value: this["store"] extends ReadableAtom<infer TValue> ? TValue : unknown;
 }
 
-export const nanostores: ReactivityAdapter<NanoStore<unknown>, NanoStoreValueTemplate> = {
-  isStore(value: unknown): value is NanoStore<unknown> {
-    return !!value && typeof value === 'object' && 'subscribe' in value && 'get' in value;
+interface NanoReadableStoreTemplate extends StoreShapeTemplate {
+  readonly store: ReadableAtom<this["value"]>;
+}
+
+interface NanoWritableStoreTemplate extends StoreShapeTemplate {
+  readonly store: WritableAtom<this["value"]>;
+}
+
+export const nanostores: ReactivityAdapter<
+  ReadableAtom<unknown>,
+  NanoStoreValueTemplate,
+  NanoReadableStoreTemplate,
+  NanoWritableStoreTemplate
+> = {
+  isStore(value: unknown): value is ReadableAtom<unknown> {
+    return !!value && typeof value === "object" && "subscribe" in value && "get" in value;
   },
-  get<T>(store: NanoStore<T>) {
+  get<T>(store: ReadableAtom<T>) {
     return store.get();
   },
-  subscribe<T>(store: NanoStore<T>, callback: (value: T) => void) {
-    return store.subscribe(callback);
-  }
+  subscribe<T>(store: ReadableAtom<T>, callback: (value: T) => void) {
+    return store.subscribe((value) => callback(value));
+  },
+  create<TValue>(initial: TValue) {
+    return atom(initial);
+  },
+  set<TValue>(store: WritableAtom<TValue>, value: TValue) {
+    store.set(value);
+  },
 };

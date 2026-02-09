@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-text directive', () => {
   it('renders literal text', async () => {
     const tag = nextTag('rwc-text-literal');
-    defineComponent(tag, () => ({}), { adapter: testReactivity });
+    defineComponent(tag, () => ({}));
 
     document.body.innerHTML = `<${tag}><span x-text="'hello'"></span></${tag}>`;
     const span = document.querySelector(`${tag} span`) as HTMLSpanElement;
@@ -17,7 +17,7 @@ describe('x-text directive', () => {
   it('renders and updates text content', async () => {
     const count = createStore(1);
     const tag = nextTag('rwc-text');
-    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ count }));
 
     document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
 
@@ -32,7 +32,7 @@ describe('x-text directive', () => {
   it('supports expressions', async () => {
     const count = createStore(5);
     const tag = nextTag('rwc-text-expr');
-    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ count }));
 
     document.body.innerHTML = `<${tag}><span x-text="count * 2"></span></${tag}>`;
     const span = document.querySelector(`${tag} span`) as HTMLSpanElement;
@@ -47,7 +47,7 @@ describe('x-text directive', () => {
   it('cleans up subscriptions on disconnect', async () => {
     const count = createStore(1);
     const tag = nextTag('rwc-text-cleanup');
-    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ count }));
 
     document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
     const host = document.querySelector(tag) as HTMLElement;

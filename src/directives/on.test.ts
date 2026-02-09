@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../define';
+import { defineComponent } from '../test-define';
 import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
 
 describe('x-on directive', () => {
@@ -11,7 +11,7 @@ describe('x-on directive', () => {
       inc() {
         setStore(count, count.value + 1);
       }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `<${tag}><button x-on:click.prevent.once="inc" x-text="count"></button></${tag}>`;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
@@ -37,7 +37,7 @@ describe('x-on directive', () => {
         eventType = event.type;
         elementTag = el.tagName;
       }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="handle($event, $el)"></button></${tag}>`;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
@@ -57,7 +57,7 @@ describe('x-on directive', () => {
       inc() {
         setStore(count, count.value + 1);
       }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -90,7 +90,7 @@ describe('x-on directive', () => {
       inner() {
         calls.push('inner');
       }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `
       <${tag}>
@@ -114,7 +114,7 @@ describe('x-on directive', () => {
       handle() {
         handled += 1;
       }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `<${tag}><a href="#" x-on:click.prevent.stop.once="handle"></a></${tag}>`;
     const link = document.querySelector(`${tag} a`) as HTMLAnchorElement;
@@ -140,7 +140,7 @@ describe('x-on directive', () => {
         boundThis = this;
         setStore(count, count.value + 1);
       }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="inc"></button></${tag}>`;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
@@ -155,7 +155,7 @@ describe('x-on directive', () => {
   it('does nothing when expression is not a call and not a function', async () => {
     const count = createStore(42);
     const tag = nextTag('rwc-on-nonfn');
-    defineComponent(tag, () => ({ count }), { adapter: testReactivity });
+    defineComponent(tag, () => ({ count }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="count"></button></${tag}>`;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
@@ -174,7 +174,7 @@ describe('x-on directive', () => {
       inc() {
         setStore(count, count.value + 1);
       }
-    }), { adapter: testReactivity });
+    }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="inc"></button></${tag}>`;
     const host = document.querySelector(tag) as HTMLElement;

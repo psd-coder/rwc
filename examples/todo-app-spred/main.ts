@@ -1,8 +1,10 @@
 import '../../src/style.css';
 
-import { defineComponent } from '../../src/index.ts';
+import { createRwc } from '../../src/index.ts';
 import { spred } from '../../src/adapters/spred.ts';
 import { signal } from '@spred/core';
+
+const { defineComponent } = createRwc({ adapter: spred });
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -16,7 +18,7 @@ defineComponent('todo-app-spred', (ctx) => {
   const newTodo = signal('');
   const filter = signal<Filter>('all');
 
-  ctx.on(ctx.$refs.input, 'keydown', (e) => {
+  ctx.on(ctx.refs.input, 'keydown', (e) => {
     e.key === 'Enter' && addTodo()
   })
 
@@ -68,7 +70,7 @@ defineComponent('todo-app-spred', (ctx) => {
     ]);
 
     newTodo.set('');
-    ctx.$refs.input.focus();
+    ctx.refs.input.focus();
   }
 
   function toggleTodo(id: number) {
@@ -109,4 +111,4 @@ defineComponent('todo-app-spred', (ctx) => {
     clearCompleted,
     setFilter,
   };
-}, { adapter: spred });
+});
