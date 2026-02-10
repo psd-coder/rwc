@@ -180,4 +180,9 @@ describe("expression parser", () => {
   it("throws on unexpected token in primary position", () => {
     expect(() => parse(")")).toThrow(/Unexpected token/);
   });
+
+  it("includes the full expression in parse errors", () => {
+    expect(() => parse("1 2")).toThrow("1 2");
+    expect(() => parse("user.")).toThrow("user.");
+  });
 });

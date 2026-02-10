@@ -12,7 +12,7 @@ const BINARY_LEVELS: BinaryOp[][] = [
 
 export function parse(input: string): Expr {
   const tokens = tokenize(input);
-  const parser = new Parser(tokens);
+  const parser = new Parser(tokens, input);
   const expr = parser.parseExpression();
   parser.expectEnd();
   return expr;
@@ -21,7 +21,10 @@ export function parse(input: string): Expr {
 class Parser {
   private index = 0;
 
-  constructor(private readonly tokens: Token[]) {}
+  constructor(
+    private readonly tokens: Token[],
+    private readonly expression: string,
+  ) {}
 
   parseExpression(): Expr {
     return this.parseTernary();
@@ -197,6 +200,6 @@ class Parser {
   }
 
   private error(message: string, pos: number): Error {
-    return new Error(`${message} at ${pos}`);
+    return new Error(`${message} at ${pos} in expression ${JSON.stringify(this.expression)}`);
   }
 }
