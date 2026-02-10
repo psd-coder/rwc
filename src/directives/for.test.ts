@@ -1,24 +1,21 @@
-import { describe, expect, it } from 'vitest';
-import { createBindingContext } from '../context';
-import { processFor } from './for';
-import { defineComponent } from '../test-define';
-import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
+import { describe, expect, it } from "vitest";
+import { createBindingContext } from "../context";
+import { processFor } from "./for";
+import { defineComponent } from "../test-define";
+import { createStore, nextTag, nextTick, setStore, testReactivity } from "../test-utils";
 
-describe('x-for directive', () => {
-  it('requires x-key', () => {
-    const template = document.createElement('template');
-    template.setAttribute('x-for', 'item in items');
+describe("x-for directive", () => {
+  it("requires x-key", () => {
+    const template = document.createElement("template");
+    template.setAttribute("x-for", "item in items");
     const ctx = createBindingContext({ items: [] }, testReactivity);
 
-    expect(() => processFor(template, 'item in items', ctx, () => {})).toThrow(/x-key/);
+    expect(() => processFor(template, "item in items", ctx, () => {})).toThrow(/x-key/);
   });
 
-  it('renders and reorders keyed items', async () => {
-    const items = createStore([
-      { id: 'a' },
-      { id: 'b' }
-    ]);
-    const tag = nextTag('rwc-for');
+  it("renders and reorders keyed items", async () => {
+    const items = createStore([{ id: "a" }, { id: "b" }]);
+    const tag = nextTag("rwc-for");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -37,10 +34,10 @@ describe('x-for directive', () => {
     const nodeA = list.querySelector('li[data-id="a"]') as HTMLLIElement;
     const nodeB = list.querySelector('li[data-id="b"]') as HTMLLIElement;
 
-    expect(nodeA.textContent).toBe('0');
-    expect(nodeB.textContent).toBe('1');
+    expect(nodeA.textContent).toBe("0");
+    expect(nodeB.textContent).toBe("1");
 
-    setStore(items, [{ id: 'b' }, { id: 'a' }]);
+    setStore(items, [{ id: "b" }, { id: "a" }]);
     await nextTick();
 
     const nodeA2 = list.querySelector('li[data-id="a"]') as HTMLLIElement;
@@ -49,19 +46,16 @@ describe('x-for directive', () => {
     expect(nodeA2).toBe(nodeA);
     expect(nodeB2).toBe(nodeB);
 
-    const ordered = Array.from(list.querySelectorAll('li'));
+    const ordered = Array.from(list.querySelectorAll("li"));
     expect(ordered[0]).toBe(nodeB);
     expect(ordered[1]).toBe(nodeA);
-    expect(nodeB.textContent).toBe('0');
-    expect(nodeA.textContent).toBe('1');
+    expect(nodeB.textContent).toBe("0");
+    expect(nodeA.textContent).toBe("1");
   });
 
-  it('adds and removes items reactively', async () => {
-    const items = createStore([
-      { id: 'a' },
-      { id: 'b' }
-    ]);
-    const tag = nextTag('rwc-for-add-remove');
+  it("adds and removes items reactively", async () => {
+    const items = createStore([{ id: "a" }, { id: "b" }]);
+    const tag = nextTag("rwc-for-add-remove");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -77,20 +71,20 @@ describe('x-for directive', () => {
     await nextTick();
 
     const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
-    expect(list.querySelectorAll('li').length).toBe(2);
+    expect(list.querySelectorAll("li").length).toBe(2);
 
-    setStore(items, [{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+    setStore(items, [{ id: "a" }, { id: "b" }, { id: "c" }]);
     await nextTick();
-    expect(list.querySelectorAll('li').length).toBe(3);
+    expect(list.querySelectorAll("li").length).toBe(3);
 
-    setStore(items, [{ id: 'a' }]);
+    setStore(items, [{ id: "a" }]);
     await nextTick();
-    expect(list.querySelectorAll('li').length).toBe(1);
+    expect(list.querySelectorAll("li").length).toBe(1);
   });
 
-  it('clears rendered nodes when the list becomes empty', async () => {
-    const items = createStore([{ id: 'a' }]);
-    const tag = nextTag('rwc-for-empty');
+  it("clears rendered nodes when the list becomes empty", async () => {
+    const items = createStore([{ id: "a" }]);
+    const tag = nextTag("rwc-for-empty");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -105,16 +99,16 @@ describe('x-for directive', () => {
 
     await nextTick();
     const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
-    expect(list.querySelectorAll('li').length).toBe(1);
+    expect(list.querySelectorAll("li").length).toBe(1);
 
     setStore(items, []);
     await nextTick();
-    expect(list.querySelectorAll('li').length).toBe(0);
+    expect(list.querySelectorAll("li").length).toBe(0);
   });
 
-  it('supports index aliases', async () => {
-    const items = createStore(['a', 'b']);
-    const tag = nextTag('rwc-for-index');
+  it("supports index aliases", async () => {
+    const items = createStore(["a", "b"]);
+    const tag = nextTag("rwc-for-index");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -129,14 +123,14 @@ describe('x-for directive', () => {
 
     await nextTick();
     const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
-    const lis = Array.from(list.querySelectorAll('li'));
-    expect(lis[0].textContent).toBe('0');
-    expect(lis[1].textContent).toBe('1');
+    const lis = Array.from(list.querySelectorAll("li"));
+    expect(lis[0].textContent).toBe("0");
+    expect(lis[1].textContent).toBe("1");
   });
 
-  it('does not interfere with sibling elements', async () => {
-    const items = createStore([{ id: 'a' }, { id: 'b' }]);
-    const tag = nextTag('rwc-for-sibling');
+  it("does not interfere with sibling elements", async () => {
+    const items = createStore([{ id: "a" }, { id: "b" }]);
+    const tag = nextTag("rwc-for-sibling");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -152,17 +146,17 @@ describe('x-for directive', () => {
 
     await nextTick();
     const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
-    const lis = Array.from(list.querySelectorAll('li'));
+    const lis = Array.from(list.querySelectorAll("li"));
     expect(lis.length).toBe(3);
-    expect(list.querySelector('.sibling')?.textContent).toBe('Static');
+    expect(list.querySelector(".sibling")?.textContent).toBe("Static");
   });
 
-  it('hydrates existing DOM without re-rendering', async () => {
+  it("hydrates existing DOM without re-rendering", async () => {
     const items = createStore([
-      { id: 'a', label: 'Alpha' },
-      { id: 'b', label: 'Beta' }
+      { id: "a", label: "Alpha" },
+      { id: "b", label: "Beta" },
     ]);
-    const tag = nextTag('rwc-for-hydrate');
+    const tag = nextTag("rwc-for-hydrate");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -183,30 +177,30 @@ describe('x-for directive', () => {
 
     await nextTick();
 
-    const lis = Array.from(list.querySelectorAll('li'));
+    const lis = Array.from(list.querySelectorAll("li"));
     expect(lis.length).toBe(2);
     expect(list.querySelector('li[data-id="a"]')).toBe(nodeA);
     expect(list.querySelector('li[data-id="b"]')).toBe(nodeB);
-    expect(nodeA.textContent).toBe('Alpha');
-    expect(nodeB.textContent).toBe('Beta');
+    expect(nodeA.textContent).toBe("Alpha");
+    expect(nodeB.textContent).toBe("Beta");
 
     setStore(items, [
-      { id: 'b', label: 'Beta' },
-      { id: 'a', label: 'Alpha' }
+      { id: "b", label: "Beta" },
+      { id: "a", label: "Alpha" },
     ]);
     await nextTick();
 
-    const reordered = Array.from(list.querySelectorAll('li'));
+    const reordered = Array.from(list.querySelectorAll("li"));
     expect(reordered[0]).toBe(nodeB);
     expect(reordered[1]).toBe(nodeA);
   });
 
-  it('hydrates nodes with directives without double-processing', async () => {
+  it("hydrates nodes with directives without double-processing", async () => {
     const items = createStore([
-      { id: 'a', label: 'Alpha', done: true },
-      { id: 'b', label: 'Beta', done: false }
+      { id: "a", label: "Alpha", done: true },
+      { id: "b", label: "Beta", done: false },
     ]);
-    const tag = nextTag('rwc-for-hydrate-directives');
+    const tag = nextTag("rwc-for-hydrate-directives");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -235,23 +229,20 @@ describe('x-for directive', () => {
     const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
     const nodeA = list.querySelector('li[data-id="a"]') as HTMLLIElement;
     const nodeB = list.querySelector('li[data-id="b"]') as HTMLLIElement;
-    const inputA = nodeA.querySelector('input') as HTMLInputElement;
-    const inputB = nodeB.querySelector('input') as HTMLInputElement;
-    const spanA = nodeA.querySelector('span') as HTMLSpanElement;
-    const spanB = nodeB.querySelector('span') as HTMLSpanElement;
+    const inputA = nodeA.querySelector("input") as HTMLInputElement;
+    const inputB = nodeB.querySelector("input") as HTMLInputElement;
+    const spanA = nodeA.querySelector("span") as HTMLSpanElement;
+    const spanB = nodeB.querySelector("span") as HTMLSpanElement;
 
-    expect(spanA.textContent).toBe('Alpha');
-    expect(spanB.textContent).toBe('Beta');
+    expect(spanA.textContent).toBe("Alpha");
+    expect(spanB.textContent).toBe("Beta");
     expect(inputA.checked).toBe(true);
     expect(inputB.checked).toBe(false);
   });
 
-  it('throws on duplicate keys', async () => {
-    const items = createStore([
-      { id: 'a' },
-      { id: 'b' }
-    ]);
-    const tag = nextTag('rwc-for-dup');
+  it("throws on duplicate keys", async () => {
+    const items = createStore([{ id: "a" }, { id: "b" }]);
+    const tag = nextTag("rwc-for-dup");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -266,12 +257,12 @@ describe('x-for directive', () => {
 
     await nextTick();
 
-    expect(() => setStore(items, [{ id: 'a' }, { id: 'a' }])).toThrow(/duplicate key/i);
+    expect(() => setStore(items, [{ id: "a" }, { id: "a" }])).toThrow(/duplicate key/i);
   });
 
-  it('treats non-array values as an empty list', async () => {
+  it("treats non-array values as an empty list", async () => {
     const items = createStore<unknown>(null);
-    const tag = nextTag('rwc-for-nonarray');
+    const tag = nextTag("rwc-for-nonarray");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -286,19 +277,19 @@ describe('x-for directive', () => {
     await nextTick();
 
     const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
-    expect(list.querySelectorAll('li').length).toBe(0);
+    expect(list.querySelectorAll("li").length).toBe(0);
 
-    setStore(items, ['a', 'b']);
-    expect(list.querySelectorAll('li').length).toBe(2);
+    setStore(items, ["a", "b"]);
+    expect(list.querySelectorAll("li").length).toBe(2);
 
-    setStore(items, 'not an array' as any);
-    expect(list.querySelectorAll('li').length).toBe(0);
+    setStore(items, "not an array" as any);
+    expect(list.querySelectorAll("li").length).toBe(0);
   });
 
-  it('disposes child subscriptions when items are removed', async () => {
-    const label = createStore('hello');
-    const items = createStore([{ id: 'a' }]);
-    const tag = nextTag('rwc-for-dispose');
+  it("disposes child subscriptions when items are removed", async () => {
+    const label = createStore("hello");
+    const items = createStore([{ id: "a" }]);
+    const tag = nextTag("rwc-for-dispose");
     defineComponent(tag, () => ({ items, label }));
 
     document.body.innerHTML = `
@@ -320,17 +311,17 @@ describe('x-for directive', () => {
     expect(label.subs.size).toBeLessThan(subsWithItem);
   });
 
-  it('throws on invalid x-for expression syntax', () => {
-    const template = document.createElement('template');
-    template.setAttribute('x-for', 'notin');
-    template.setAttribute('x-key', 'item');
+  it("throws on invalid x-for expression syntax", () => {
+    const template = document.createElement("template");
+    template.setAttribute("x-for", "notin");
+    template.setAttribute("x-key", "item");
     const ctx = createBindingContext({ items: [] }, testReactivity);
-    expect(() => processFor(template, 'notin', ctx, () => {})).toThrow(/Invalid x-for/);
+    expect(() => processFor(template, "notin", ctx, () => {})).toThrow(/Invalid x-for/);
   });
 
-  it('renders multiple root nodes per iteration', async () => {
-    const items = createStore(['a', 'b']);
-    const tag = nextTag('rwc-for-multi-root');
+  it("renders multiple root nodes per iteration", async () => {
+    const items = createStore(["a", "b"]);
+    const tag = nextTag("rwc-for-multi-root");
     defineComponent(tag, () => ({ items }));
 
     document.body.innerHTML = `
@@ -346,36 +337,42 @@ describe('x-for directive', () => {
     await nextTick();
 
     const container = document.querySelector(`${tag} div`) as HTMLDivElement;
-    expect(container.querySelectorAll('span').length).toBe(2);
-    expect(container.querySelectorAll('hr').length).toBe(2);
+    expect(container.querySelectorAll("span").length).toBe(2);
+    expect(container.querySelectorAll("hr").length).toBe(2);
 
-    setStore(items, ['a', 'b', 'c']);
-    expect(container.querySelectorAll('span').length).toBe(3);
-    expect(container.querySelectorAll('hr').length).toBe(3);
+    setStore(items, ["a", "b", "c"]);
+    expect(container.querySelectorAll("span").length).toBe(3);
+    expect(container.querySelectorAll("hr").length).toBe(3);
   });
 
-  it('throws when used on non-template elements', () => {
-    const element = document.createElement('li');
-    element.setAttribute('x-for', 'item in items');
-    element.setAttribute('x-key', 'item');
+  it("throws when used on non-template elements", () => {
+    const element = document.createElement("li");
+    element.setAttribute("x-for", "item in items");
+    element.setAttribute("x-key", "item");
     const ctx = createBindingContext({ items: [] }, testReactivity);
 
-    expect(() => processFor(element, 'item in items', ctx, () => {})).toThrow(/x-for requires <template>/);
+    expect(() => processFor(element, "item in items", ctx, () => {})).toThrow(
+      /x-for requires <template>/,
+    );
   });
 
-  it('hydrates server-rendered custom-element lists', async () => {
-    const itemA = createStore({ id: 'a', text: 'Alpha' });
-    const itemB = createStore({ id: 'b', text: 'Beta' });
+  it("hydrates server-rendered custom-element lists", async () => {
+    const itemA = createStore({ id: "a", text: "Alpha" });
+    const itemB = createStore({ id: "b", text: "Beta" });
     const items = createStore([itemA, itemB]);
-    const tag = nextTag('rwc-for-ssr');
-    const childTag = nextTag('rwc-item-ssr');
+    const tag = nextTag("rwc-for-ssr");
+    const childTag = nextTag("rwc-item-ssr");
     const toggles: Array<typeof itemA> = [];
 
-    defineComponent<{ $item: unknown }>(childTag, (ctx) => {
-      const $item = ctx.props.$item as unknown as typeof itemA;
-      const toggle = () => toggles.push($item);
-      return { $item, toggle };
-    }, { props: ['$item'] });
+    defineComponent<{ $item: unknown }>(
+      childTag,
+      (ctx) => {
+        const $item = ctx.props.$item as unknown as typeof itemA;
+        const toggle = () => toggles.push($item);
+        return { $item, toggle };
+      },
+      { props: ["$item"] },
+    );
 
     defineComponent(tag, () => ({ items }));
 
@@ -404,10 +401,12 @@ describe('x-for directive', () => {
 
     const labels = Array.from(document.querySelectorAll(`${childTag} .label`));
     const labelValues = labels.map((label) => label.textContent?.trim());
-    expect(labelValues).toContain('Alpha');
-    expect(labelValues).toContain('Beta');
+    expect(labelValues).toContain("Alpha");
+    expect(labelValues).toContain("Beta");
 
-    const buttons = Array.from(document.querySelectorAll(`${childTag} button`)) as HTMLButtonElement[];
+    const buttons = Array.from(
+      document.querySelectorAll(`${childTag} button`),
+    ) as HTMLButtonElement[];
     buttons[0]?.click();
     expect(toggles).toHaveLength(1);
     buttons[1]?.click();
@@ -416,12 +415,12 @@ describe('x-for directive', () => {
     expect(toggles).toContain(itemB);
   });
 
-  it('hydrates when components are defined after SSR markup', async () => {
-    const itemA = createStore({ id: 'a', text: 'Alpha' });
-    const itemB = createStore({ id: 'b', text: 'Beta' });
+  it("hydrates when components are defined after SSR markup", async () => {
+    const itemA = createStore({ id: "a", text: "Alpha" });
+    const itemB = createStore({ id: "b", text: "Beta" });
     const items = createStore([itemA, itemB]);
-    const hostTag = nextTag('rwc-ssr-host');
-    const childTag = nextTag('rwc-ssr-item');
+    const hostTag = nextTag("rwc-ssr-host");
+    const childTag = nextTag("rwc-ssr-item");
     const toggles: Array<typeof itemA> = [];
     let setupCalls = 0;
 
@@ -446,12 +445,16 @@ describe('x-for directive', () => {
       </${hostTag}>
     `;
 
-    defineComponent<{ $item: unknown }>(childTag, (ctx) => {
-      setupCalls += 1;
-      const $item = ctx.props.$item as unknown as typeof itemA;
-      const toggle = () => toggles.push($item);
-      return { $item, toggle };
-    }, { props: ['$item'] });
+    defineComponent<{ $item: unknown }>(
+      childTag,
+      (ctx) => {
+        setupCalls += 1;
+        const $item = ctx.props.$item as unknown as typeof itemA;
+        const toggle = () => toggles.push($item);
+        return { $item, toggle };
+      },
+      { props: ["$item"] },
+    );
 
     defineComponent(hostTag, () => ({ items }));
 
@@ -463,10 +466,12 @@ describe('x-for directive', () => {
 
     const labels = Array.from(document.querySelectorAll(`${childTag} .label`));
     const labelValues = labels.map((label) => label.textContent?.trim());
-    expect(labelValues).toContain('Alpha');
-    expect(labelValues).toContain('Beta');
+    expect(labelValues).toContain("Alpha");
+    expect(labelValues).toContain("Beta");
 
-    const buttons = Array.from(document.querySelectorAll(`${childTag} button`)) as HTMLButtonElement[];
+    const buttons = Array.from(
+      document.querySelectorAll(`${childTag} button`),
+    ) as HTMLButtonElement[];
     buttons[0]?.click();
     expect(toggles).toHaveLength(1);
     buttons[1]?.click();

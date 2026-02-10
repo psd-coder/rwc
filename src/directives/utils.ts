@@ -15,8 +15,8 @@ export function evaluateExpr(expr: Expr, ctx: BindingContext, specials: Specials
     expr,
     ctx.scope,
     specials,
-    value => resolveValue(ctx, value),
-    value => isReactiveStore(value, ctx.adapter),
+    (value) => resolveValue(ctx, value),
+    (value) => isReactiveStore(value, ctx.adapter),
   );
 }
 
@@ -37,14 +37,12 @@ export function bindExpressionRaw(
   specials: Specials = {},
 ) {
   const expr = parse(source);
-  return bindParsedExpression(
-    expr,
-    ctx,
-    callback,
-    () =>
-      expr.type === "ident"
-        ? (expr.name in specials ? specials[expr.name] : ctx.scope[expr.name])
-        : evaluateExpr(expr, ctx, specials),
+  return bindParsedExpression(expr, ctx, callback, () =>
+    expr.type === "ident"
+      ? expr.name in specials
+        ? specials[expr.name]
+        : ctx.scope[expr.name]
+      : evaluateExpr(expr, ctx, specials),
   );
 }
 
@@ -64,7 +62,7 @@ function bindParsedExpression(
 
   run();
 
-  const deps = collectDependencies(expr, ctx.scope, value => isReactiveStore(value, ctx.adapter));
+  const deps = collectDependencies(expr, ctx.scope, (value) => isReactiveStore(value, ctx.adapter));
   for (const dep of deps) {
     const unsubscribe = subscribeReactiveStore(dep, ctx.adapter, () => run());
     ctx.disposers.add(unsubscribe);

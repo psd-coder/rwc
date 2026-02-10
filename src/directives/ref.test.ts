@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../test-define';
-import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
+import { describe, expect, it } from "vitest";
+import { defineComponent } from "../test-define";
+import { createStore, nextTag, nextTick, setStore } from "../test-utils";
 
-describe('x-ref directive', () => {
-  it('exposes static refs during setup', async () => {
-    const tag = nextTag('rwc-ref-setup');
+describe("x-ref directive", () => {
+  it("exposes static refs during setup", async () => {
+    const tag = nextTag("rwc-ref-setup");
     defineComponent(tag, (ctx) => {
       (ctx.host as { __ref?: HTMLElement }).__ref = ctx.refs.field;
       return {};
@@ -19,8 +19,8 @@ describe('x-ref directive', () => {
     expect(host.__ref).toBe(input);
   });
 
-  it('registers and cleans up refs', async () => {
-    const tag = nextTag('rwc-ref');
+  it("registers and cleans up refs", async () => {
+    const tag = nextTag("rwc-ref");
     defineComponent(tag, (ctx) => {
       (ctx.host as { __ctx?: unknown }).__ctx = ctx;
       return {};
@@ -29,7 +29,9 @@ describe('x-ref directive', () => {
     document.body.innerHTML = `<${tag}><input x-ref="field" /></${tag}>`;
     await nextTick();
 
-    const host = document.querySelector(tag) as HTMLElement & { __ctx?: { refs: Record<string, HTMLElement> } };
+    const host = document.querySelector(tag) as HTMLElement & {
+      __ctx?: { refs: Record<string, HTMLElement> };
+    };
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;
 
     expect(host.__ctx?.refs.field).toBe(input);
@@ -38,9 +40,9 @@ describe('x-ref directive', () => {
     expect(host.__ctx?.refs.field).toBeUndefined();
   });
 
-  it('registers and cleans up dynamic refs inside x-if', async () => {
+  it("registers and cleans up dynamic refs inside x-if", async () => {
     const show = createStore(true);
-    const tag = nextTag('rwc-ref-if');
+    const tag = nextTag("rwc-ref-if");
     let refs: Record<string, HTMLElement> = {};
     defineComponent(tag, (ctx) => {
       refs = ctx.refs;
@@ -57,7 +59,7 @@ describe('x-ref directive', () => {
     await nextTick();
 
     expect(refs.dynamic).toBeDefined();
-    expect(refs.dynamic.tagName).toBe('INPUT');
+    expect(refs.dynamic.tagName).toBe("INPUT");
 
     setStore(show, false);
     expect(refs.dynamic).toBeUndefined();
@@ -66,8 +68,8 @@ describe('x-ref directive', () => {
     expect(refs.dynamic).toBeDefined();
   });
 
-  it('registers multiple refs', async () => {
-    const tag = nextTag('rwc-ref-multi');
+  it("registers multiple refs", async () => {
+    const tag = nextTag("rwc-ref-multi");
     defineComponent(tag, (ctx) => {
       (ctx.host as { __ctx?: unknown }).__ctx = ctx;
       return {};
@@ -81,7 +83,9 @@ describe('x-ref directive', () => {
     `;
     await nextTick();
 
-    const host = document.querySelector(tag) as HTMLElement & { __ctx?: { refs: Record<string, HTMLElement> } };
+    const host = document.querySelector(tag) as HTMLElement & {
+      __ctx?: { refs: Record<string, HTMLElement> };
+    };
     const input = document.querySelector(`${tag} input`) as HTMLInputElement;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
 

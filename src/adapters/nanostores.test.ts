@@ -1,13 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from "vitest";
 import { atom, type WritableAtom } from "nanostores";
-import { nanostores } from './nanostores';
+import { nanostores } from "./nanostores";
 
-const createStore = <T,>(initial: T) => {
+const createStore = <T>(initial: T) => {
   return atom(initial) as WritableAtom<T>;
 };
 
-describe('nanostores adapter', () => {
-  it('identifies compatible stores', () => {
+describe("nanostores adapter", () => {
+  it("identifies compatible stores", () => {
     const store = createStore(0);
     expect(nanostores.isStore(store)).toBe(true);
     expect(nanostores.isStore(42)).toBe(false);
@@ -15,14 +15,14 @@ describe('nanostores adapter', () => {
     expect(nanostores.isStore({})).toBe(false);
   });
 
-  it('reads store values', () => {
+  it("reads store values", () => {
     const store = createStore(42);
     expect(nanostores.get(store)).toBe(42);
     store.set(7);
     expect(nanostores.get(store)).toBe(7);
   });
 
-  it('subscribes and unsubscribes', () => {
+  it("subscribes and unsubscribes", () => {
     const store = createStore(1);
     const callback = vi.fn();
 
@@ -39,7 +39,7 @@ describe('nanostores adapter', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
-  it('supports multiple subscribers', () => {
+  it("supports multiple subscribers", () => {
     const store = createStore(0);
     const callback1 = vi.fn();
     const callback2 = vi.fn();

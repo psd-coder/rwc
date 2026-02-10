@@ -4,11 +4,11 @@ import {
   setupProps,
   type ComponentContext,
   type BindingContext,
-  type ComponentRefs
-} from './context';
-import type { ReactivityAdapter } from './adapters/types';
-import { createExpressionProps } from './expression/props';
-import { processDirectives } from './directives/registry';
+  type ComponentRefs,
+} from "./context";
+import type { ReactivityAdapter } from "./adapters/types";
+import { createExpressionProps } from "./expression/props";
+import { processDirectives } from "./directives/registry";
 
 export type SetupFn<
   P extends Record<string, unknown> = {},
@@ -62,7 +62,7 @@ function registerComponent<
         let ancestor = this.parentElement;
         let hasComponentParent = false;
         while (ancestor) {
-          if (ancestor.tagName.includes('-')) {
+          if (ancestor.tagName.includes("-")) {
             hasComponentParent = true;
             break;
           }
@@ -71,7 +71,7 @@ function registerComponent<
         if (allowDefer && hasComponentParent && propNames.length) {
           const element = this as Record<string, unknown>;
           const pendingProps = propNames.some(
-            (prop) => element[prop] === undefined && this.hasAttribute(`x-prop:${prop}`)
+            (prop) => element[prop] === undefined && this.hasAttribute(`x-prop:${prop}`),
           );
           if (pendingProps) {
             queueMicrotask(() => init(false));
@@ -80,7 +80,13 @@ function registerComponent<
         }
         collectStaticRefs(this, componentCtx.refs);
         if (propNames.length > 0) {
-          setupProps(this, componentCtx.props, propNames as Array<keyof P & string>, adapter, this.cleanup);
+          setupProps(
+            this,
+            componentCtx.props,
+            propNames as Array<keyof P & string>,
+            adapter,
+            this.cleanup,
+          );
         }
         const scope = setup(componentCtx);
         this.ctx = {

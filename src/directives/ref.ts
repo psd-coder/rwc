@@ -1,4 +1,4 @@
-import type { BindingContext } from '../context';
+import type { BindingContext } from "../context";
 
 export function processRef(el: Element, refName: string, ctx: BindingContext) {
   const name = refName.trim();

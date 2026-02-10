@@ -1,3 +1,3 @@
 export function processCloak(el: Element) {
-  el.removeAttribute('x-cloak');
+  el.removeAttribute("x-cloak");
 }

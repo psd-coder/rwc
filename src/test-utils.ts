@@ -1,4 +1,4 @@
-import type { ReactivityAdapter, StoreShapeTemplate, StoreValueTemplate } from './adapters/types';
+import type { ReactivityAdapter, StoreShapeTemplate, StoreValueTemplate } from "./adapters/types";
 
 export type Store<T> = {
   value: T;
@@ -6,16 +6,16 @@ export type Store<T> = {
   set: (value: T) => void;
 };
 interface TestStoreValueTemplate extends StoreValueTemplate {
-  readonly value: this['store'] extends Store<infer TValue> ? TValue : unknown;
+  readonly value: this["store"] extends Store<infer TValue> ? TValue : unknown;
 }
 interface TestReadableStoreTemplate extends StoreShapeTemplate {
-  readonly store: Store<this['value']>;
+  readonly store: Store<this["value"]>;
 }
 interface TestWritableStoreTemplate extends StoreShapeTemplate {
-  readonly store: Store<this['value']>;
+  readonly store: Store<this["value"]>;
 }
 
-export const createStore = <T,>(value: T): Store<T> => {
+export const createStore = <T>(value: T): Store<T> => {
   const subs = new Set<(next: T) => void>();
   const store: Store<T> = {
     value,
@@ -38,20 +38,20 @@ export const testReactivity: ReactivityAdapter<
 > = {
   isStore: (value): value is Store<unknown> =>
     !!value && typeof value === "object" && "value" in value && "subs" in value,
-  get: <T,>(store: Store<T>) => store.value,
-  subscribe: <T,>(store: Store<T>, callback: (value: T) => void) => {
+  get: <T>(store: Store<T>) => store.value,
+  subscribe: <T>(store: Store<T>, callback: (value: T) => void) => {
     const handler = (value: T) => callback(value);
     store.subs.add(handler);
     callback(store.value);
     return () => store.subs.delete(handler);
   },
-  create: <T,>(initial: T) => createStore(initial),
-  set: <T,>(store: Store<T>, value: T) => {
+  create: <T>(initial: T) => createStore(initial),
+  set: <T>(store: Store<T>, value: T) => {
     store.set(value);
   },
 };
 
-export const setStore = <T,>(store: Store<T>, value: T) => {
+export const setStore = <T>(store: Store<T>, value: T) => {
   store.set(value);
 };
 
@@ -59,5 +59,5 @@ export const nextTick = () => Promise.resolve().then(() => Promise.resolve());
 
 export const nextTag = (() => {
   let id = 0;
-  return (prefix = 'rwc-test') => `${prefix}-${id++}`;
+  return (prefix = "rwc-test") => `${prefix}-${id++}`;
 })();

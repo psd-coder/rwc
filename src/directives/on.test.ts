@@ -1,42 +1,42 @@
-import { describe, expect, it } from 'vitest';
-import { defineComponent } from '../test-define';
-import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
+import { describe, expect, it } from "vitest";
+import { defineComponent } from "../test-define";
+import { createStore, nextTag, nextTick, setStore } from "../test-utils";
 
-describe('x-on directive', () => {
-  it('invokes handlers and respects modifiers', async () => {
+describe("x-on directive", () => {
+  it("invokes handlers and respects modifiers", async () => {
     const count = createStore(0);
-    const tag = nextTag('rwc-on');
+    const tag = nextTag("rwc-on");
     defineComponent(tag, () => ({
       count,
       inc() {
         setStore(count, count.value + 1);
-      }
+      },
     }));
 
     document.body.innerHTML = `<${tag}><button x-on:click.prevent.once="inc" x-text="count"></button></${tag}>`;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
 
     await nextTick();
-    expect(button.textContent).toBe('0');
+    expect(button.textContent).toBe("0");
 
-    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
     button.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
-    expect(button.textContent).toBe('1');
+    expect(button.textContent).toBe("1");
 
-    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    expect(button.textContent).toBe('1');
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    expect(button.textContent).toBe("1");
   });
 
-  it('passes $event and $el to handlers', async () => {
-    const tag = nextTag('rwc-on-event');
-    let eventType = '';
-    let elementTag = '';
+  it("passes $event and $el to handlers", async () => {
+    const tag = nextTag("rwc-on-event");
+    let eventType = "";
+    let elementTag = "";
     defineComponent(tag, () => ({
       handle(event: Event, el: Element) {
         eventType = event.type;
         elementTag = el.tagName;
-      }
+      },
     }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="handle($event, $el)"></button></${tag}>`;
@@ -45,18 +45,18 @@ describe('x-on directive', () => {
     await nextTick();
     button.click();
 
-    expect(eventType).toBe('click');
-    expect(elementTag).toBe('BUTTON');
+    expect(eventType).toBe("click");
+    expect(elementTag).toBe("BUTTON");
   });
 
-  it('supports stop modifier', async () => {
+  it("supports stop modifier", async () => {
     const count = createStore(0);
-    const tag = nextTag('rwc-on-stop');
+    const tag = nextTag("rwc-on-stop");
     defineComponent(tag, () => ({
       count,
       inc() {
         setStore(count, count.value + 1);
-      }
+      },
     }));
 
     document.body.innerHTML = `
@@ -69,27 +69,27 @@ describe('x-on directive', () => {
     const parent = document.querySelector(`${tag} .parent`) as HTMLDivElement;
     const button = document.querySelector(`${tag} button`) as HTMLButtonElement;
     let parentCalls = 0;
-    parent.addEventListener('click', () => {
+    parent.addEventListener("click", () => {
       parentCalls += 1;
     });
 
     await nextTick();
-    button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(count.value).toBe(1);
     expect(parentCalls).toBe(0);
   });
 
-  it('supports capture modifier ordering', async () => {
-    const tag = nextTag('rwc-on-capture');
+  it("supports capture modifier ordering", async () => {
+    const tag = nextTag("rwc-on-capture");
     const calls: string[] = [];
     defineComponent(tag, () => ({
       outer() {
-        calls.push('outer');
+        calls.push("outer");
       },
       inner() {
-        calls.push('inner');
-      }
+        calls.push("inner");
+      },
     }));
 
     document.body.innerHTML = `
@@ -104,42 +104,42 @@ describe('x-on directive', () => {
     await nextTick();
     button.click();
 
-    expect(calls).toEqual(['outer', 'inner']);
+    expect(calls).toEqual(["outer", "inner"]);
   });
 
-  it('supports multiple modifiers', async () => {
-    const tag = nextTag('rwc-on-multi');
+  it("supports multiple modifiers", async () => {
+    const tag = nextTag("rwc-on-multi");
     let handled = 0;
     defineComponent(tag, () => ({
       handle() {
         handled += 1;
-      }
+      },
     }));
 
     document.body.innerHTML = `<${tag}><a href="#" x-on:click.prevent.stop.once="handle"></a></${tag}>`;
     const link = document.querySelector(`${tag} a`) as HTMLAnchorElement;
 
     await nextTick();
-    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
     link.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);
     expect(handled).toBe(1);
 
-    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     expect(handled).toBe(1);
   });
 
-  it('invokes function values when expression is not a call', async () => {
+  it("invokes function values when expression is not a call", async () => {
     const count = createStore(0);
-    const tag = nextTag('rwc-on-fn');
-    let boundThis: unknown;
+    const tag = nextTag("rwc-on-fn");
+    let boundScopeCount: unknown;
     defineComponent(tag, () => ({
       count,
       inc(this: unknown) {
-        boundThis = this;
+        boundScopeCount = (this as { count?: unknown }).count;
         setStore(count, count.value + 1);
-      }
+      },
     }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="inc"></button></${tag}>`;
@@ -149,12 +149,12 @@ describe('x-on directive', () => {
     button.click();
 
     expect(count.value).toBe(1);
-    expect((boundThis as { count?: unknown })?.count).toBe(count);
+    expect(boundScopeCount).toBe(count);
   });
 
-  it('does nothing when expression is not a call and not a function', async () => {
+  it("does nothing when expression is not a call and not a function", async () => {
     const count = createStore(42);
-    const tag = nextTag('rwc-on-nonfn');
+    const tag = nextTag("rwc-on-nonfn");
     defineComponent(tag, () => ({ count }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="count"></button></${tag}>`;
@@ -166,14 +166,14 @@ describe('x-on directive', () => {
     expect(count.value).toBe(42);
   });
 
-  it('removes listeners on disconnect', async () => {
+  it("removes listeners on disconnect", async () => {
     const count = createStore(0);
-    const tag = nextTag('rwc-on-cleanup');
+    const tag = nextTag("rwc-on-cleanup");
     defineComponent(tag, () => ({
       count,
       inc() {
         setStore(count, count.value + 1);
-      }
+      },
     }));
 
     document.body.innerHTML = `<${tag}><button x-on:click="inc"></button></${tag}>`;

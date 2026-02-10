@@ -1,4 +1,4 @@
-export const HYDRATED_ATTR = 'data-rwc-hydrated';
+export const HYDRATED_ATTR = "data-rwc-hydrated";
 
 export const isHydratedElement = (el: Element) => el.closest(`[${HYDRATED_ATTR}]`) !== null;
 
@@ -16,7 +16,7 @@ export const isHydratedWithinRoot = (el: Element, root: Element) => {
 export const markHydratedNodes = (nodes: Node[]) => {
   for (const node of nodes) {
     if (node instanceof Element) {
-      node.setAttribute(HYDRATED_ATTR, '');
+      node.setAttribute(HYDRATED_ATTR, "");
     }
   }
 };

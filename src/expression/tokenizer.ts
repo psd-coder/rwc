@@ -1,4 +1,4 @@
-export type TokenType = 'number' | 'string' | 'ident' | 'op' | 'eof';
+export type TokenType = "number" | "string" | "ident" | "op" | "eof";
 
 export interface Token {
   type: TokenType;
@@ -6,25 +6,25 @@ export interface Token {
   pos: number;
 }
 
-const MULTI_CHAR_OPS = ['===', '!==', '<=', '>=', '&&', '||'];
+const MULTI_CHAR_OPS = ["===", "!==", "<=", ">=", "&&", "||"];
 const SINGLE_CHAR_OPS = new Set([
-  '<',
-  '>',
-  '+',
-  '-',
-  '*',
-  '/',
-  '!',
-  '?',
-  ':',
-  '{',
-  '}',
-  '.',
-  ',',
-  '(',
-  ')',
-  '[',
-  ']'
+  "<",
+  ">",
+  "+",
+  "-",
+  "*",
+  "/",
+  "!",
+  "?",
+  ":",
+  "{",
+  "}",
+  ".",
+  ",",
+  "(",
+  ")",
+  "[",
+  "]",
 ]);
 
 export function tokenize(input: string): Token[] {
@@ -43,15 +43,15 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
-    const multi = MULTI_CHAR_OPS.find(op => input.startsWith(op, i));
+    const multi = MULTI_CHAR_OPS.find((op) => input.startsWith(op, i));
     if (multi) {
-      push('op', multi, i);
+      push("op", multi, i);
       i += multi.length;
       continue;
     }
 
     if (SINGLE_CHAR_OPS.has(ch)) {
-      push('op', ch, i);
+      push("op", ch, i);
       i += 1;
       continue;
     }
@@ -60,24 +60,24 @@ export function tokenize(input: string): Token[] {
       const quote = ch;
       const start = i;
       i += 1;
-      let value = '';
+      let value = "";
       let terminated = false;
       while (i < input.length) {
         const current = input[i];
-        if (current === '\\') {
+        if (current === "\\") {
           const next = input[i + 1];
           if (next === undefined) {
             throw new Error(`Unterminated string at ${start}`);
           }
           switch (next) {
-            case 'n':
-              value += '\n';
+            case "n":
+              value += "\n";
               break;
-            case 'r':
-              value += '\r';
+            case "r":
+              value += "\r";
               break;
-            case 't':
-              value += '\t';
+            case "t":
+              value += "\t";
               break;
             case '"':
               value += '"';
@@ -85,8 +85,8 @@ export function tokenize(input: string): Token[] {
             case "'":
               value += "'";
               break;
-            case '\\':
-              value += '\\';
+            case "\\":
+              value += "\\";
               break;
             default:
               value += next;
@@ -96,7 +96,7 @@ export function tokenize(input: string): Token[] {
         }
         if (current === quote) {
           i += 1;
-          push('string', value, start);
+          push("string", value, start);
           terminated = true;
           break;
         }
@@ -117,15 +117,15 @@ export function tokenize(input: string): Token[] {
         num += input[i];
         i += 1;
       }
-      if (input[i] === '.' && /[0-9]/.test(input[i + 1] ?? '')) {
-        num += '.';
+      if (input[i] === "." && /[0-9]/.test(input[i + 1] ?? "")) {
+        num += ".";
         i += 1;
         while (i < input.length && /[0-9]/.test(input[i])) {
           num += input[i];
           i += 1;
         }
       }
-      push('number', Number.parseFloat(num), start);
+      push("number", Number.parseFloat(num), start);
       continue;
     }
 
@@ -137,13 +137,13 @@ export function tokenize(input: string): Token[] {
         ident += input[i];
         i += 1;
       }
-      push('ident', ident, start);
+      push("ident", ident, start);
       continue;
     }
 
     throw new Error(`Unexpected character "${ch}" at ${i}`);
   }
 
-  tokens.push({ type: 'eof', pos: input.length });
+  tokens.push({ type: "eof", pos: input.length });
   return tokens;
 }

@@ -1,5 +1,5 @@
-import type { BindingContext } from '../context';
-import { bindExpression } from './utils';
+import type { BindingContext } from "../context";
+import { bindExpression } from "./utils";
 
 const baseClassCache = new WeakMap<Element, string>();
 const CLASS_TOKEN_SPLIT_RE = /\s+/;
@@ -14,10 +14,13 @@ function splitClassTokens(value: string): string[] {
 }
 
 function isClassObject(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function collectClassObjectTokens(classObject: Record<string, unknown>, resolution: ClassResolution): void {
+function collectClassObjectTokens(
+  classObject: Record<string, unknown>,
+  resolution: ClassResolution,
+): void {
   for (const [rawKey, enabled] of Object.entries(classObject)) {
     const tokens = splitClassTokens(rawKey);
     if (enabled) {
@@ -39,7 +42,7 @@ function resolveClassValue(value: unknown): ClassResolution {
 
   if (!value) return resolution;
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     resolution.enabledTokens.push(...splitClassTokens(value));
     return resolution;
   }
@@ -47,7 +50,7 @@ function resolveClassValue(value: unknown): ClassResolution {
   if (Array.isArray(value)) {
     for (const item of value) {
       if (!item) continue;
-      if (typeof item === 'string') {
+      if (typeof item === "string") {
         resolution.enabledTokens.push(...splitClassTokens(item));
         continue;
       }
@@ -82,11 +85,16 @@ function mergeClassNames(base: string, value: unknown): string {
     nextTokens.push(token);
   }
 
-  return nextTokens.join(' ');
+  return nextTokens.join(" ");
 }
 
-export function processClass(el: Element, exprSource: string, ctx: BindingContext, attrName: string) {
-  const name = attrName.startsWith('x-class:') ? attrName.slice('x-class:'.length) : '';
+export function processClass(
+  el: Element,
+  exprSource: string,
+  ctx: BindingContext,
+  attrName: string,
+) {
+  const name = attrName.startsWith("x-class:") ? attrName.slice("x-class:".length) : "";
 
   if (!name) {
     const element = el as HTMLElement;

@@ -1,10 +1,10 @@
-import type { BindingContext } from '../context';
-import { createBindingContext, createChildContext } from '../context';
-import { bindExpression, evaluateExpr } from './utils';
-import { setupTemplate } from './_utils';
-import { markHydratedNodes } from './hydration';
-import { parse } from '../expression/parser';
-import type { ProcessOptions } from './registry';
+import type { BindingContext } from "../context";
+import { createBindingContext, createChildContext } from "../context";
+import { bindExpression, evaluateExpr } from "./utils";
+import { setupTemplate } from "./_utils";
+import { markHydratedNodes } from "./hydration";
+import { parse } from "../expression/parser";
+import type { ProcessOptions } from "./registry";
 
 type ForParts = {
   itemName: string;
@@ -26,23 +26,23 @@ export function processFor(
   el: Element,
   exprSource: string,
   ctx: BindingContext,
-  processDirectives: DirectiveProcessor
+  processDirectives: DirectiveProcessor,
 ) {
   const { itemName, indexName, listExpr } = parseForExpression(exprSource);
   if (!(el instanceof HTMLTemplateElement)) {
-    throw new Error('x-for requires <template>');
+    throw new Error("x-for requires <template>");
   }
-  const keyExprSource = el.getAttribute('x-key');
+  const keyExprSource = el.getAttribute("x-key");
   if (!keyExprSource) {
-    throw new Error('x-for requires x-key');
+    throw new Error("x-for requires x-key");
   }
   const keyExpr = parse(keyExprSource);
-  const templateSetup = setupTemplate(el, 'x-for');
+  const templateSetup = setupTemplate(el, "x-for");
   if (!templateSetup) return;
   const template = templateSetup.template;
   const parent = template.parentNode;
   if (!parent) return;
-  const anchor = document.createComment('x-for');
+  const anchor = document.createComment("x-for");
 
   const entries = new Map<unknown, Entry>();
   let hydrationAttempted = false;
@@ -52,7 +52,9 @@ export function processFor(
     (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) ||
     node.nodeType === Node.COMMENT_NODE;
 
-  const templatePattern = Array.from(template.content.childNodes).filter(node => !isIgnorableText(node));
+  const templatePattern = Array.from(template.content.childNodes).filter(
+    (node) => !isIgnorableText(node),
+  );
 
   const matchesPattern = (node: Node, patternNode: Node) => {
     if (node.nodeType !== patternNode.nodeType) return false;
@@ -79,7 +81,7 @@ export function processFor(
       dispose();
     }
     if (removeNodes) {
-      entry.nodes.forEach(node => node.parentNode?.removeChild(node));
+      entry.nodes.forEach((node) => node.parentNode?.removeChild(node));
     }
   };
 
@@ -99,7 +101,7 @@ export function processFor(
     index: number,
     scopeOverrides: Record<string, unknown>,
     key: unknown,
-    nodesOverride?: Node[]
+    nodesOverride?: Node[],
   ): Entry => {
     const childCtx = createChildContext(ctx, scopeOverrides);
     if (nodesOverride) {
@@ -112,7 +114,12 @@ export function processFor(
     return { key, item, index, ctx: childCtx, nodes };
   };
 
-  const rebindEntry = (entry: Entry, item: unknown, index: number, scopeOverrides: Record<string, unknown>) => {
+  const rebindEntry = (
+    entry: Entry,
+    item: unknown,
+    index: number,
+    scopeOverrides: Record<string, unknown>,
+  ) => {
     disposeEntry(entry, false);
     const nextCtx = createChildContext(ctx, scopeOverrides);
     entry.ctx = nextCtx;
@@ -197,8 +204,10 @@ export function processFor(
       const scopeOverrides = createScopeOverrides(item, index);
       const key = evaluateKey(scopeOverrides);
       if (nextKeys.has(key)) {
-        const keyLabel = typeof key === 'string' ? `"${key}"` : String(key);
-        throw new Error(`x-for requires unique keys. Duplicate key ${keyLabel} from x-key="${keyExprSource}".`);
+        const keyLabel = typeof key === "string" ? `"${key}"` : String(key);
+        throw new Error(
+          `x-for requires unique keys. Duplicate key ${keyLabel} from x-key="${keyExprSource}".`,
+        );
       }
       nextKeys.add(key);
       keyedItems.push({ item, index, scopeOverrides, key });
@@ -231,8 +240,10 @@ export function processFor(
       }
     }
 
-    const nextOrder = ordered.map(entry => entry.key);
-    const missingNodes = ordered.some(entry => entry.nodes.some(node => node.parentNode !== parent));
+    const nextOrder = ordered.map((entry) => entry.key);
+    const missingNodes = ordered.some((entry) =>
+      entry.nodes.some((node) => node.parentNode !== parent),
+    );
     let orderChanged = true;
     const previous = lastOrder;
 
@@ -241,7 +252,9 @@ export function processFor(
         orderChanged = nextOrder.some((key, index) => key !== previous[index]);
       } else {
         const minLength = Math.min(previous.length, nextOrder.length);
-        const prefixSame = previous.slice(0, minLength).every((key, index) => key === nextOrder[index]);
+        const prefixSame = previous
+          .slice(0, minLength)
+          .every((key, index) => key === nextOrder[index]);
 
         if (prefixSame && nextOrder.length > previous.length && missingNodes) {
           const appended = ordered.slice(previous.length);
@@ -284,23 +297,23 @@ export function processFor(
 function parseForExpression(source: string): ForParts {
   const match = source.match(/^\s*(?:\(([^)]+)\)|([^ ]+))\s+in\s+(.+)$/);
   if (!match) {
-    throw new Error('Invalid x-for expression');
+    throw new Error("Invalid x-for expression");
   }
 
   const names = (match[1] ?? match[2])
-    .split(',')
-    .map(name => name.trim())
+    .split(",")
+    .map((name) => name.trim())
     .filter(Boolean);
 
   const itemName = names[0];
   if (!itemName) {
-    throw new Error('x-for requires an item identifier');
+    throw new Error("x-for requires an item identifier");
   }
 
   const indexName = names[1];
   const listExpr = match[3].trim();
   if (!listExpr) {
-    throw new Error('x-for requires a list expression');
+    throw new Error("x-for requires a list expression");
   }
 
   return { itemName, indexName, listExpr };

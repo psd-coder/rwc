@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { createRwc } from './define';
-import { defineComponent } from './test-define';
-import { createStore, nextTag, nextTick, setStore, testReactivity } from './test-utils';
+import { describe, expect, it } from "vitest";
+import { createRwc } from "./define";
+import { defineComponent } from "./test-define";
+import { createStore, nextTag, nextTick, setStore, testReactivity } from "./test-utils";
 
-describe('defineComponent', () => {
-  it('registers custom element and runs setup with context', async () => {
-    const tag = nextTag('rwc-define');
+describe("defineComponent", () => {
+  it("registers custom element and runs setup with context", async () => {
+    const tag = nextTag("rwc-define");
     defineComponent(tag, (ctx) => {
       expect(ctx.host).toBeInstanceOf(HTMLElement);
       return {};
@@ -18,11 +18,11 @@ describe('defineComponent', () => {
     el.remove();
   });
 
-  it('runs cleanup on disconnect', async () => {
-    const tag = nextTag('rwc-cleanup');
+  it("runs cleanup on disconnect", async () => {
+    const tag = nextTag("rwc-cleanup");
     defineComponent(tag, (ctx) => {
       ctx.registerCleanup(() => {
-        (ctx.host as HTMLElement).dataset.cleaned = 'true';
+        (ctx.host as HTMLElement).dataset.cleaned = "true";
       });
       return {};
     });
@@ -31,11 +31,11 @@ describe('defineComponent', () => {
     document.body.append(el);
     await nextTick();
     el.remove();
-    expect(el.dataset.cleaned).toBe('true');
+    expect(el.dataset.cleaned).toBe("true");
   });
 
-  it('runs multiple cleanup callbacks', async () => {
-    const tag = nextTag('rwc-multi-cleanup');
+  it("runs multiple cleanup callbacks", async () => {
+    const tag = nextTag("rwc-multi-cleanup");
     let cleaned = 0;
     defineComponent(tag, (ctx) => {
       ctx.registerCleanup(() => {
@@ -54,16 +54,16 @@ describe('defineComponent', () => {
     expect(cleaned).toBe(2);
   });
 
-  it('silently ignores double registration of the same tag', () => {
-    const tag = nextTag('rwc-double');
+  it("silently ignores double registration of the same tag", () => {
+    const tag = nextTag("rwc-double");
     defineComponent(tag, () => ({}));
     // Second call must not throw
     defineComponent(tag, () => ({}));
     expect(customElements.get(tag)).toBeDefined();
   });
 
-  it('skips initialization if element is disconnected before microtask fires', async () => {
-    const tag = nextTag('rwc-disconnected');
+  it("skips initialization if element is disconnected before microtask fires", async () => {
+    const tag = nextTag("rwc-disconnected");
     let setupCalled = false;
     defineComponent(tag, () => {
       setupCalled = true;
@@ -77,37 +77,37 @@ describe('defineComponent', () => {
     expect(setupCalled).toBe(false);
   });
 
-  it('updates directive bindings on store changes', async () => {
+  it("updates directive bindings on store changes", async () => {
     const count = createStore(1);
-    const tag = nextTag('rwc-text-define');
+    const tag = nextTag("rwc-text-define");
     defineComponent(tag, () => ({ count }));
     document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
 
     const span = document.querySelector(`${tag} span`) as HTMLSpanElement;
     await nextTick();
-    expect(span.textContent).toBe('1');
+    expect(span.textContent).toBe("1");
 
     setStore(count, 2);
-    expect(span.textContent).toBe('2');
+    expect(span.textContent).toBe("2");
   });
 
-  it('creates adapter-scoped defineComponent via createRwc', async () => {
+  it("creates adapter-scoped defineComponent via createRwc", async () => {
     const { defineComponent: defineWithAdapter } = createRwc({ adapter: testReactivity });
     const count = createStore(1);
-    const tag = nextTag('rwc-runtime-define');
+    const tag = nextTag("rwc-runtime-define");
 
     defineWithAdapter(tag, () => ({ count }));
     document.body.innerHTML = `<${tag}><span x-text="count"></span></${tag}>`;
 
     const span = document.querySelector(`${tag} span`) as HTMLSpanElement;
     await nextTick();
-    expect(span.textContent).toBe('1');
+    expect(span.textContent).toBe("1");
 
     setStore(count, 2);
-    expect(span.textContent).toBe('2');
+    expect(span.textContent).toBe("2");
   });
 
-  it('throws when createRwc adapter is missing', () => {
+  it("throws when createRwc adapter is missing", () => {
     expect(() => createRwc({ adapter: undefined as any })).toThrow(/[Aa]dapter/);
   });
 });

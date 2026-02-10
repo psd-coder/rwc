@@ -1,4 +1,4 @@
-import type { Expr } from './types';
+import type { Expr } from "./types";
 import { expressionPropsStoresSymbol } from "./props";
 
 export type StorePredicate = (value: unknown) => boolean;
@@ -6,7 +6,7 @@ export type StorePredicate = (value: unknown) => boolean;
 export function collectDependencies(
   expr: Expr,
   scope: Record<string, unknown>,
-  isStore: StorePredicate
+  isStore: StorePredicate,
 ): unknown[] {
   const deps: unknown[] = [];
   const seen = new Set<unknown>();
@@ -20,41 +20,41 @@ export function collectDependencies(
 
   const visit = (node: Expr) => {
     switch (node.type) {
-      case 'literal':
+      case "literal":
         return;
-      case 'ident': {
+      case "ident": {
         const value = scope[node.name];
         if (isStore(value)) add(value);
         return;
       }
-      case 'member':
+      case "member":
         addMemberDependency(node, scope, isStore, add);
         visit(node.object);
         return;
-      case 'index':
+      case "index":
         addIndexDependency(node, scope, isStore, add);
         visit(node.object);
         visit(node.index);
         return;
-      case 'array':
+      case "array":
         node.items.forEach(visit);
         return;
-      case 'object':
-        node.entries.forEach(entry => visit(entry.value));
+      case "object":
+        node.entries.forEach((entry) => visit(entry.value));
         return;
-      case 'unary':
+      case "unary":
         visit(node.arg);
         return;
-      case 'binary':
+      case "binary":
         visit(node.left);
         visit(node.right);
         return;
-      case 'ternary':
+      case "ternary":
         visit(node.test);
         visit(node.consequent);
         visit(node.alternate);
         return;
-      case 'call':
+      case "call":
         visit(node.callee);
         node.args.forEach(visit);
         return;

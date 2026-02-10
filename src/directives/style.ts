@@ -1,11 +1,16 @@
-import type { BindingContext } from '../context';
-import { bindExpression } from './utils';
+import type { BindingContext } from "../context";
+import { bindExpression } from "./utils";
 
-export function processStyle(el: Element, exprSource: string, ctx: BindingContext, attrName: string) {
-  const isPropertyBinding = attrName.startsWith('x-style:');
-  const prop = isPropertyBinding ? attrName.slice('x-style:'.length) : '';
+export function processStyle(
+  el: Element,
+  exprSource: string,
+  ctx: BindingContext,
+  attrName: string,
+) {
+  const isPropertyBinding = attrName.startsWith("x-style:");
+  const prop = isPropertyBinding ? attrName.slice("x-style:".length) : "";
   if (isPropertyBinding && !prop) {
-    throw new Error('x-style requires a property');
+    throw new Error("x-style requires a property");
   }
   if (!prop) {
     const element = el as HTMLElement;
@@ -14,7 +19,7 @@ export function processStyle(el: Element, exprSource: string, ctx: BindingContex
 
     const setStyleValue = (name: string, value: unknown) => {
       const stringValue = String(value);
-      if (name.startsWith('--') || name.includes('-')) {
+      if (name.startsWith("--") || name.includes("-")) {
         element.style.setProperty(name, stringValue);
       } else {
         styleRecord[name] = stringValue;
@@ -22,15 +27,15 @@ export function processStyle(el: Element, exprSource: string, ctx: BindingContex
     };
 
     const removeStyleValue = (name: string) => {
-      if (name.startsWith('--') || name.includes('-')) {
+      if (name.startsWith("--") || name.includes("-")) {
         element.style.removeProperty(name);
       } else {
-        styleRecord[name] = '';
+        styleRecord[name] = "";
       }
     };
 
     bindExpression(exprSource, ctx, (value) => {
-      if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
         for (const name of applied) {
           removeStyleValue(name);
         }

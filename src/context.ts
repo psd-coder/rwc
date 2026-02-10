@@ -26,7 +26,10 @@ export type ComponentProps<
   [K in keyof P]: PropStore<P[K], TAdapter>;
 };
 
-type EffectStoreValue<TAdapter extends ReactivityAdapter, TStore> = AdapterStoreValue<TAdapter, TStore>;
+type EffectStoreValue<TAdapter extends ReactivityAdapter, TStore> = AdapterStoreValue<
+  TAdapter,
+  TStore
+>;
 
 export interface ComponentContext<
   P extends Record<string, unknown> = {},
@@ -90,14 +93,23 @@ export function createContext<
   const props = new Proxy(propValues, {
     get(target, key, receiver) {
       if (typeof key === "string" && !Object.prototype.hasOwnProperty.call(target, key)) {
-        initializePropStore(host as unknown as Record<string, unknown>, target, key, adapter, disposers);
+        initializePropStore(
+          host as unknown as Record<string, unknown>,
+          target,
+          key,
+          adapter,
+          disposers,
+        );
       }
       return Reflect.get(target, key, receiver);
     },
   }) as ComponentProps<P, Adapter>;
   const baseAdapter = adapter as ReactivityAdapter;
 
-  const effect = ((storeOrStores: unknown | readonly unknown[], callback: (value: unknown) => void) => {
+  const effect = ((
+    storeOrStores: unknown | readonly unknown[],
+    callback: (value: unknown) => void,
+  ) => {
     if (Array.isArray(storeOrStores)) {
       const stores = storeOrStores;
       const readValues = () => stores.map((store) => readReactiveStoreValue(store, baseAdapter));
@@ -125,7 +137,9 @@ export function createContext<
     getElements: <E extends HTMLElement>(selector: string) =>
       Array.from(host.querySelectorAll(selector)) as E[],
     dispatch: (name, detail, options) =>
-      host.dispatchEvent(new CustomEvent(name, { bubbles: true, cancelable: true, detail, ...options })),
+      host.dispatchEvent(
+        new CustomEvent(name, { bubbles: true, cancelable: true, detail, ...options }),
+      ),
     on: (target, type, listener, options) => {
       const targets = Array.isArray(target) ? target : [target];
       for (const t of targets) {

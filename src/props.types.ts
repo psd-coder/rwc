@@ -55,16 +55,13 @@ defineWithTest<{ title: Store<string> }>(
   { props: ["title"] },
 );
 
-defineWithNano<{ value: string | null; disabled: boolean }>(
-  "rwc-props-types-runtime",
-  (ctx) => {
-    const runtimeValue: ReadableAtom<string | null> = ctx.props.value;
-    const runtimeDisabled: ReadableAtom<boolean> = ctx.props.disabled;
-    void runtimeValue;
-    void runtimeDisabled;
-    return {};
-  },
-);
+defineWithNano<{ value: string | null; disabled: boolean }>("rwc-props-types-runtime", (ctx) => {
+  const runtimeValue: ReadableAtom<string | null> = ctx.props.value;
+  const runtimeDisabled: ReadableAtom<boolean> = ctx.props.disabled;
+  void runtimeValue;
+  void runtimeDisabled;
+  return {};
+});
 
 const writable = atom("ready");
 const readable = writable as ReadableAtom<string>;

@@ -1,18 +1,18 @@
-export type UnaryOp = '!' | '-' | '+';
+export type UnaryOp = "!" | "-" | "+";
 
 export type BinaryOp =
-  | '||'
-  | '&&'
-  | '==='
-  | '!=='
-  | '<'
-  | '>'
-  | '<='
-  | '>='
-  | '+'
-  | '-'
-  | '*'
-  | '/';
+  | "||"
+  | "&&"
+  | "==="
+  | "!=="
+  | "<"
+  | ">"
+  | "<="
+  | ">="
+  | "+"
+  | "-"
+  | "*"
+  | "/";
 
 export type Expr =
   | LiteralExpr
@@ -27,59 +27,59 @@ export type Expr =
   | CallExpr;
 
 export interface LiteralExpr {
-  type: 'literal';
+  type: "literal";
   value: unknown;
 }
 
 export interface IdentExpr {
-  type: 'ident';
+  type: "ident";
   name: string;
 }
 
 export interface MemberExpr {
-  type: 'member';
+  type: "member";
   object: Expr;
   property: string;
 }
 
 export interface IndexExpr {
-  type: 'index';
+  type: "index";
   object: Expr;
   index: Expr;
 }
 
 export interface ArrayExpr {
-  type: 'array';
+  type: "array";
   items: Expr[];
 }
 
 export interface ObjectExpr {
-  type: 'object';
+  type: "object";
   entries: Array<{ key: string; value: Expr }>;
 }
 
 export interface UnaryExpr {
-  type: 'unary';
+  type: "unary";
   op: UnaryOp;
   arg: Expr;
 }
 
 export interface BinaryExpr {
-  type: 'binary';
+  type: "binary";
   op: BinaryOp;
   left: Expr;
   right: Expr;
 }
 
 export interface TernaryExpr {
-  type: 'ternary';
+  type: "ternary";
   test: Expr;
   consequent: Expr;
   alternate: Expr;
 }
 
 export interface CallExpr {
-  type: 'call';
+  type: "call";
   callee: Expr;
   args: Expr[];
 }

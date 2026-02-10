@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { createBindingContext } from '../context';
-import { defineComponent } from '../test-define';
-import { createStore, nextTag, nextTick, setStore, testReactivity } from '../test-utils';
-import { processPortal } from './portal';
+import { describe, expect, it } from "vitest";
+import { createBindingContext } from "../context";
+import { defineComponent } from "../test-define";
+import { createStore, nextTag, nextTick, setStore, testReactivity } from "../test-utils";
+import { processPortal } from "./portal";
 
-describe('x-portal directive', () => {
-  it('moves content to target and cleans up', async () => {
-    const label = createStore('Hello');
-    const tag = nextTag('rwc-portal');
+describe("x-portal directive", () => {
+  it("moves content to target and cleans up", async () => {
+    const label = createStore("Hello");
+    const tag = nextTag("rwc-portal");
     defineComponent(tag, () => ({ label }));
 
     document.body.innerHTML = `
@@ -21,22 +21,22 @@ describe('x-portal directive', () => {
 
     await nextTick();
 
-    const target = document.querySelector('#portal-target') as HTMLDivElement;
-    const span = target.querySelector('span') as HTMLSpanElement;
-    expect(span.textContent).toBe('Hello');
+    const target = document.querySelector("#portal-target") as HTMLDivElement;
+    const span = target.querySelector("span") as HTMLSpanElement;
+    expect(span.textContent).toBe("Hello");
 
-    setStore(label, 'Updated');
-    expect(span.textContent).toBe('Updated');
+    setStore(label, "Updated");
+    expect(span.textContent).toBe("Updated");
 
     const host = document.querySelector(tag) as HTMLElement;
     host.remove();
-    expect(target.querySelector('span')).toBeNull();
+    expect(target.querySelector("span")).toBeNull();
   });
 
-  it('supports portal + if on the same template', async () => {
+  it("supports portal + if on the same template", async () => {
     const show = createStore(true);
-    const label = createStore('Yo');
-    const tag = nextTag('rwc-portal-if');
+    const label = createStore("Yo");
+    const tag = nextTag("rwc-portal-if");
     defineComponent(tag, () => ({ show, label }));
 
     document.body.innerHTML = `
@@ -50,29 +50,29 @@ describe('x-portal directive', () => {
 
     await nextTick();
 
-    const target = document.querySelector('#portal-if-target') as HTMLDivElement;
-    expect(target.querySelector('.note')?.textContent).toBe('Yo');
+    const target = document.querySelector("#portal-if-target") as HTMLDivElement;
+    expect(target.querySelector(".note")?.textContent).toBe("Yo");
 
     setStore(show, false);
     await nextTick();
-    expect(target.querySelector('.note')).toBeNull();
+    expect(target.querySelector(".note")).toBeNull();
 
-    setStore(label, 'Again');
+    setStore(label, "Again");
     setStore(show, true);
     await nextTick();
-    expect(target.querySelector('.note')?.textContent).toBe('Again');
+    expect(target.querySelector(".note")?.textContent).toBe("Again");
   });
 
-  it('throws when target is missing', () => {
-    const template = document.createElement('template');
+  it("throws when target is missing", () => {
+    const template = document.createElement("template");
     const ctx = createBindingContext({}, testReactivity);
-    expect(() => processPortal(template, '#missing-target', ctx, () => {})).toThrow(
-      'Portal target not found: #missing-target'
+    expect(() => processPortal(template, "#missing-target", ctx, () => {})).toThrow(
+      "Portal target not found: #missing-target",
     );
   });
 
-  it('supports body as a target', async () => {
-    const tag = nextTag('rwc-portal-body');
+  it("supports body as a target", async () => {
+    const tag = nextTag("rwc-portal-body");
     defineComponent(tag, () => ({}));
 
     document.body.innerHTML = `
@@ -84,12 +84,12 @@ describe('x-portal directive', () => {
     `;
 
     await nextTick();
-    expect(document.body.querySelector('#portal-body-content')).toBeTruthy();
+    expect(document.body.querySelector("#portal-body-content")).toBeTruthy();
   });
 
-  it('supports multiple portals to the same target', async () => {
-    const tagA = nextTag('rwc-portal-a');
-    const tagB = nextTag('rwc-portal-b');
+  it("supports multiple portals to the same target", async () => {
+    const tagA = nextTag("rwc-portal-a");
+    const tagB = nextTag("rwc-portal-b");
     defineComponent(tagA, () => ({}));
     defineComponent(tagB, () => ({}));
 
@@ -108,14 +108,14 @@ describe('x-portal directive', () => {
     `;
 
     await nextTick();
-    const target = document.querySelector('#portal-multi-target') as HTMLDivElement;
-    expect(target.querySelector('.first')).toBeTruthy();
-    expect(target.querySelector('.second')).toBeTruthy();
+    const target = document.querySelector("#portal-multi-target") as HTMLDivElement;
+    expect(target.querySelector(".first")).toBeTruthy();
+    expect(target.querySelector(".second")).toBeTruthy();
   });
 
-  it('supports non-template elements', async () => {
-    const label = createStore('Inline');
-    const tag = nextTag('rwc-portal-el');
+  it("supports non-template elements", async () => {
+    const label = createStore("Inline");
+    const tag = nextTag("rwc-portal-el");
     defineComponent(tag, () => ({ label }));
 
     document.body.innerHTML = `
@@ -129,23 +129,27 @@ describe('x-portal directive', () => {
 
     await nextTick();
 
-    const target = document.querySelector('#portal-el-target') as HTMLDivElement;
-    expect(target.querySelector('.inline')?.textContent?.trim()).toBe('Inline');
+    const target = document.querySelector("#portal-el-target") as HTMLDivElement;
+    expect(target.querySelector(".inline")?.textContent?.trim()).toBe("Inline");
   });
 
-  it('hydrates custom-element lists inside a portal', async () => {
-    const itemA = createStore({ id: 'a', text: 'Alpha' });
-    const itemB = createStore({ id: 'b', text: 'Beta' });
+  it("hydrates custom-element lists inside a portal", async () => {
+    const itemA = createStore({ id: "a", text: "Alpha" });
+    const itemB = createStore({ id: "b", text: "Beta" });
     const items = createStore([itemA, itemB]);
-    const hostTag = nextTag('rwc-portal-hydrate');
-    const childTag = nextTag('rwc-portal-item');
+    const hostTag = nextTag("rwc-portal-hydrate");
+    const childTag = nextTag("rwc-portal-item");
     const toggles: Array<typeof itemA> = [];
 
-    defineComponent<{ $item: unknown }>(childTag, (ctx) => {
-      const $item = ctx.props.$item as unknown as typeof itemA;
-      const toggle = () => toggles.push($item);
-      return { $item, toggle };
-    }, { props: ['$item'] });
+    defineComponent<{ $item: unknown }>(
+      childTag,
+      (ctx) => {
+        const $item = ctx.props.$item as unknown as typeof itemA;
+        const toggle = () => toggles.push($item);
+        return { $item, toggle };
+      },
+      { props: ["$item"] },
+    );
 
     defineComponent(hostTag, () => ({ items }));
 
@@ -173,13 +177,15 @@ describe('x-portal directive', () => {
 
     await nextTick();
 
-    const target = document.querySelector('#portal-hydrate-target') as HTMLDivElement;
+    const target = document.querySelector("#portal-hydrate-target") as HTMLDivElement;
     const labels = Array.from(target.querySelectorAll(`${childTag} .label`));
     const labelValues = labels.map((label) => label.textContent?.trim());
-    expect(labelValues).toContain('Alpha');
-    expect(labelValues).toContain('Beta');
+    expect(labelValues).toContain("Alpha");
+    expect(labelValues).toContain("Beta");
 
-    const buttons = Array.from(target.querySelectorAll(`${childTag} button`)) as HTMLButtonElement[];
+    const buttons = Array.from(
+      target.querySelectorAll(`${childTag} button`),
+    ) as HTMLButtonElement[];
     buttons[0]?.click();
     buttons[1]?.click();
     expect(toggles).toHaveLength(2);

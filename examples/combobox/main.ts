@@ -1,30 +1,30 @@
-import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
-import { signal } from '@spred/core';
-import { createRwc } from '../../src/index';
-import { spred } from '../../src/adapters/spred';
+import { autoUpdate, computePosition, flip, offset, shift } from "@floating-ui/dom";
+import { signal } from "@spred/core";
+import { createRwc } from "../../src/index";
+import { spred } from "../../src/adapters/spred";
 
 const { defineComponent } = createRwc({ adapter: spred });
 
 type Option = { id: string; label: string; code: string };
 
 const OPTIONS: Option[] = [
-  { id: 'us', label: 'United States', code: 'US' },
-  { id: 'ca', label: 'Canada', code: 'CA' },
-  { id: 'mx', label: 'Mexico', code: 'MX' },
-  { id: 'fr', label: 'France', code: 'FR' },
-  { id: 'de', label: 'Germany', code: 'DE' },
-  { id: 'jp', label: 'Japan', code: 'JP' },
-  { id: 'ng', label: 'Nigeria', code: 'NG' },
-  { id: 'br', label: 'Brazil', code: 'BR' }
+  { id: "us", label: "United States", code: "US" },
+  { id: "ca", label: "Canada", code: "CA" },
+  { id: "mx", label: "Mexico", code: "MX" },
+  { id: "fr", label: "France", code: "FR" },
+  { id: "de", label: "Germany", code: "DE" },
+  { id: "jp", label: "Japan", code: "JP" },
+  { id: "ng", label: "Nigeria", code: "NG" },
+  { id: "br", label: "Brazil", code: "BR" },
 ];
 
-defineComponent('combo-box', (ctx) => {
-  const query = signal('');
+defineComponent("combo-box", (ctx) => {
+  const query = signal("");
   const options = signal(OPTIONS);
   const filtered = signal<Option[]>(OPTIONS);
   const isOpen = signal(false);
   const selected = signal<Option | null>(null);
-  const dropdownStyle = signal({ top: '0px', left: '0px', width: '0px' });
+  const dropdownStyle = signal({ top: "0px", left: "0px", width: "0px" });
 
   const hostId = ctx.host.id || `combo-${Math.random().toString(36).slice(2, 8)}`;
   ctx.host.id = hostId;
@@ -38,18 +38,20 @@ defineComponent('combo-box', (ctx) => {
 
   const updatePosition = async () => {
     const input = ctx.refs.input as HTMLInputElement | undefined;
-    const dropdown = document.querySelector(`[data-dropdown-for="${hostId}"]`) as HTMLElement | null;
+    const dropdown = document.querySelector(
+      `[data-dropdown-for="${hostId}"]`,
+    ) as HTMLElement | null;
     if (!input || !dropdown) return;
 
     const { x, y } = await computePosition(input, dropdown, {
-      placement: 'bottom-start',
-      middleware: [offset(6), flip(), shift({ padding: 8 })]
+      placement: "bottom-start",
+      middleware: [offset(6), flip(), shift({ padding: 8 })],
     });
 
     dropdownStyle.set({
       top: `${y}px`,
       left: `${x}px`,
-      width: `${input.offsetWidth}px`
+      width: `${input.offsetWidth}px`,
     });
   };
 
@@ -59,7 +61,9 @@ defineComponent('combo-box', (ctx) => {
     queueMicrotask(async () => {
       await updatePosition();
       const input = ctx.refs.input as HTMLInputElement | undefined;
-      const dropdown = document.querySelector(`[data-dropdown-for="${hostId}"]`) as HTMLElement | null;
+      const dropdown = document.querySelector(
+        `[data-dropdown-for="${hostId}"]`,
+      ) as HTMLElement | null;
       if (!input || !dropdown) return;
       cleanupAuto?.();
       cleanupAuto = autoUpdate(input, dropdown, updatePosition);
@@ -82,7 +86,7 @@ defineComponent('combo-box', (ctx) => {
 
   const onInput = (event: Event) => {
     const target = event.target as HTMLInputElement | null;
-    const value = target?.value ?? '';
+    const value = target?.value ?? "";
     query.set(value);
     filterOptions(value);
     open();
@@ -113,7 +117,7 @@ defineComponent('combo-box', (ctx) => {
     toggle,
     onInput,
     onBlur,
-    select
+    select,
   };
 
   return state;

@@ -1,10 +1,10 @@
-import type { BindingContext } from '../context';
-import { createChildContext } from '../context';
-import { bindExpression } from './utils';
-import { setupTemplate } from './_utils';
-import type { ProcessOptions } from './registry';
+import type { BindingContext } from "../context";
+import { createChildContext } from "../context";
+import { bindExpression } from "./utils";
+import { setupTemplate } from "./_utils";
+import type { ProcessOptions } from "./registry";
 
-const SSR_ATTR = 'x-if-ssr';
+const SSR_ATTR = "x-if-ssr";
 
 type MountedBlock = {
   ctx: BindingContext;
@@ -18,7 +18,7 @@ export function processIf(
   exprSource: string,
   ctx: BindingContext,
   processDirectives: DirectiveProcessor,
-  portalTargetSelector?: string
+  portalTargetSelector?: string,
 ) {
   const clearSsrMarkers = (nodes: Node[]) => {
     for (const node of nodes) {
@@ -39,10 +39,10 @@ export function processIf(
   if (!(el instanceof HTMLTemplateElement) && !portalTarget) {
     const parent = el.parentNode;
     if (!parent) return;
-    el.removeAttribute('x-if');
-    const placeholder = document.createComment('x-if');
+    el.removeAttribute("x-if");
+    const placeholder = document.createComment("x-if");
     parent.insertBefore(placeholder, el.nextSibling);
-    const template = document.createElement('template');
+    const template = document.createElement("template");
     template.content.append(el.cloneNode(true));
 
     let mounted: MountedBlock | null = null;
@@ -69,7 +69,7 @@ export function processIf(
       for (const dispose of mounted.ctx.disposers) {
         dispose();
       }
-      mounted.nodes.forEach(node => node.parentNode?.removeChild(node));
+      mounted.nodes.forEach((node) => node.parentNode?.removeChild(node));
       mounted = null;
     };
 
@@ -90,7 +90,7 @@ export function processIf(
     return;
   }
 
-  const templateSetup = setupTemplate(el, 'x-if');
+  const templateSetup = setupTemplate(el, "x-if");
   if (!templateSetup) return;
   const { template } = templateSetup;
   const anchor: ChildNode = templateSetup.isTemplate ? template : templateSetup.placeholder;
@@ -118,7 +118,7 @@ export function processIf(
     for (const dispose of mounted.ctx.disposers) {
       dispose();
     }
-    mounted.nodes.forEach(node => node.parentNode?.removeChild(node));
+    mounted.nodes.forEach((node) => node.parentNode?.removeChild(node));
     mounted = null;
   };
 

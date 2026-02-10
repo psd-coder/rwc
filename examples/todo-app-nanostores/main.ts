@@ -1,12 +1,12 @@
-import '../../src/style.css';
+import "../../src/style.css";
 
-import { atom, computed } from 'nanostores';
-import { createRwc } from '../../src/index';
-import { nanostores } from '../../src/adapters/nanostores';
+import { atom, computed } from "nanostores";
+import { createRwc } from "../../src/index";
+import { nanostores } from "../../src/adapters/nanostores";
 
 const { defineComponent } = createRwc({ adapter: nanostores });
 
-type Filter = 'all' | 'active' | 'completed';
+type Filter = "all" | "active" | "completed";
 
 type TodoItem = {
   id: number;
@@ -14,50 +14,50 @@ type TodoItem = {
   completed: boolean;
 };
 
-defineComponent('todo-app-nanostores', (ctx) => {
+defineComponent("todo-app-nanostores", (ctx) => {
   const $todos = atom<TodoItem[]>([
-    { id: 1, text: 'Draft component API', completed: true },
-    { id: 2, text: 'Build directive tests', completed: false }
+    { id: 1, text: "Draft component API", completed: true },
+    { id: 2, text: "Build directive tests", completed: false },
   ]);
-  const $newTodo = atom('');
-  const $filter = atom<Filter>('all');
+  const $newTodo = atom("");
+  const $filter = atom<Filter>("all");
 
   const $activeTodos = computed($todos, (todos) => todos.filter((todo) => !todo.completed));
   const $completedTodos = computed($todos, (todos) => todos.filter((todo) => todo.completed));
   const $filteredTodos = computed([$todos, $filter], (todos, filter) => {
-    if (filter === 'active') return todos.filter((todo) => !todo.completed);
-    if (filter === 'completed') return todos.filter((todo) => todo.completed);
+    if (filter === "active") return todos.filter((todo) => !todo.completed);
+    if (filter === "completed") return todos.filter((todo) => todo.completed);
     return todos;
   });
   const $canAdd = computed($newTodo, (value) => value.trim().length > 0);
   const $emptyMessage = computed($filter, (filter) => {
-    if (filter === 'active') return 'No active todos.';
-    if (filter === 'completed') return 'No completed todos.';
-    return 'No todos yet.';
+    if (filter === "active") return "No active todos.";
+    if (filter === "completed") return "No completed todos.";
+    return "No todos yet.";
   });
 
   const onInput = (event: Event) => {
     const target = event.target as HTMLInputElement | null;
-    $newTodo.set(target?.value ?? '');
+    $newTodo.set(target?.value ?? "");
   };
 
   const addTodo = () => {
     const text = $newTodo.get().trim();
     if (!text) return;
     $todos.set([...$todos.get(), { id: Date.now(), text, completed: false }]);
-    $newTodo.set('');
+    $newTodo.set("");
     ctx.refs.input?.focus();
   };
 
-  ctx.on(ctx.refs.input, 'keydown', (event: KeyboardEvent) => {
-    if (event.key === 'Enter') {
+  ctx.on(ctx.refs.input, "keydown", (event: KeyboardEvent) => {
+    if (event.key === "Enter") {
       addTodo();
     }
   });
 
   const toggleTodo = (id: number) => {
     $todos.set(
-      $todos.get().map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
+      $todos.get().map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)),
     );
   };
 
@@ -87,6 +87,6 @@ defineComponent('todo-app-nanostores', (ctx) => {
     toggleTodo,
     deleteTodo,
     clearCompleted,
-    setFilter
+    setFilter,
   };
 });

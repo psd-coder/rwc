@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
-import { spred } from './spred';
+import { describe, expect, it, vi } from "vitest";
+import { spred } from "./spred";
 
-const createSignal = <T,>(initial: T) => {
+const createSignal = <T>(initial: T) => {
   const subs = new Set<(next: T) => void>();
   const signal = {
     value: initial,
@@ -13,13 +13,13 @@ const createSignal = <T,>(initial: T) => {
     set: (next: T) => {
       signal.value = next;
       for (const sub of subs) sub(signal.value);
-    }
+    },
   };
   return signal;
 };
 
-describe('spred adapter', () => {
-  it('identifies compatible signals', () => {
+describe("spred adapter", () => {
+  it("identifies compatible signals", () => {
     const signal = createSignal(0);
     expect(spred.isStore(signal)).toBe(true);
     expect(spred.isStore(42)).toBe(false);
@@ -27,14 +27,14 @@ describe('spred adapter', () => {
     expect(spred.isStore({})).toBe(false);
   });
 
-  it('reads signal values', () => {
+  it("reads signal values", () => {
     const signal = createSignal(5);
     expect(spred.get(signal)).toBe(5);
     signal.set(8);
     expect(spred.get(signal)).toBe(8);
   });
 
-  it('subscribes and unsubscribes', () => {
+  it("subscribes and unsubscribes", () => {
     const signal = createSignal(1);
     const callback = vi.fn();
 
@@ -51,7 +51,7 @@ describe('spred adapter', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
-  it('supports multiple subscribers', () => {
+  it("supports multiple subscribers", () => {
     const signal = createSignal(0);
     const callback1 = vi.fn();
     const callback2 = vi.fn();

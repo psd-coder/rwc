@@ -1,180 +1,183 @@
-import { describe, expect, it } from 'vitest';
-import { parse } from './parser';
+import { describe, expect, it } from "vitest";
+import { parse } from "./parser";
 
-describe('expression parser', () => {
-  it('parses literals and identifiers', () => {
-    expect(parse('0')).toEqual({ type: 'literal', value: 0 });
-    expect(parse('123')).toEqual({ type: 'literal', value: 123 });
-    expect(parse('3.14')).toEqual({ type: 'literal', value: 3.14 });
-    expect(parse('false')).toEqual({ type: 'literal', value: false });
-    expect(parse('"hi"')).toEqual({ type: 'literal', value: 'hi' });
-    expect(parse("''")).toEqual({ type: 'literal', value: '' });
-    expect(parse('true')).toEqual({ type: 'literal', value: true });
-    expect(parse('null')).toEqual({ type: 'literal', value: null });
-    expect(parse('user')).toEqual({ type: 'ident', name: 'user' });
-    expect(parse('$event')).toEqual({ type: 'ident', name: '$event' });
-    expect(parse('_private')).toEqual({ type: 'ident', name: '_private' });
+describe("expression parser", () => {
+  it("parses literals and identifiers", () => {
+    expect(parse("0")).toEqual({ type: "literal", value: 0 });
+    expect(parse("123")).toEqual({ type: "literal", value: 123 });
+    expect(parse("3.14")).toEqual({ type: "literal", value: 3.14 });
+    expect(parse("false")).toEqual({ type: "literal", value: false });
+    expect(parse('"hi"')).toEqual({ type: "literal", value: "hi" });
+    expect(parse("''")).toEqual({ type: "literal", value: "" });
+    expect(parse("true")).toEqual({ type: "literal", value: true });
+    expect(parse("null")).toEqual({ type: "literal", value: null });
+    expect(parse("user")).toEqual({ type: "ident", name: "user" });
+    expect(parse("$event")).toEqual({ type: "ident", name: "$event" });
+    expect(parse("_private")).toEqual({ type: "ident", name: "_private" });
   });
 
-  it('parses binary precedence', () => {
-    expect(parse('1 + 2 * 3')).toEqual({
-      type: 'binary',
-      op: '+',
-      left: { type: 'literal', value: 1 },
+  it("parses binary precedence", () => {
+    expect(parse("1 + 2 * 3")).toEqual({
+      type: "binary",
+      op: "+",
+      left: { type: "literal", value: 1 },
       right: {
-        type: 'binary',
-        op: '*',
-        left: { type: 'literal', value: 2 },
-        right: { type: 'literal', value: 3 }
-      }
+        type: "binary",
+        op: "*",
+        left: { type: "literal", value: 2 },
+        right: { type: "literal", value: 3 },
+      },
     });
   });
 
-  it('parses unary and ternary', () => {
-    expect(parse('!active')).toEqual({
-      type: 'unary',
-      op: '!',
-      arg: { type: 'ident', name: 'active' }
+  it("parses unary and ternary", () => {
+    expect(parse("!active")).toEqual({
+      type: "unary",
+      op: "!",
+      arg: { type: "ident", name: "active" },
     });
-    expect(parse('+count')).toEqual({
-      type: 'unary',
-      op: '+',
-      arg: { type: 'ident', name: 'count' }
+    expect(parse("+count")).toEqual({
+      type: "unary",
+      op: "+",
+      arg: { type: "ident", name: "count" },
     });
 
-    expect(parse('flag ? a : b')).toEqual({
-      type: 'ternary',
-      test: { type: 'ident', name: 'flag' },
-      consequent: { type: 'ident', name: 'a' },
-      alternate: { type: 'ident', name: 'b' }
+    expect(parse("flag ? a : b")).toEqual({
+      type: "ternary",
+      test: { type: "ident", name: "flag" },
+      consequent: { type: "ident", name: "a" },
+      alternate: { type: "ident", name: "b" },
     });
   });
 
-  it('parses member, index, and call chains', () => {
-    expect(parse('user.name')).toEqual({
-      type: 'member',
-      object: { type: 'ident', name: 'user' },
-      property: 'name'
+  it("parses member, index, and call chains", () => {
+    expect(parse("user.name")).toEqual({
+      type: "member",
+      object: { type: "ident", name: "user" },
+      property: "name",
     });
-    expect(parse('user.address.city')).toEqual({
-      type: 'member',
+    expect(parse("user.address.city")).toEqual({
+      type: "member",
       object: {
-        type: 'member',
-        object: { type: 'ident', name: 'user' },
-        property: 'address'
+        type: "member",
+        object: { type: "ident", name: "user" },
+        property: "address",
       },
-      property: 'city'
+      property: "city",
     });
 
-    expect(parse('items[0]')).toEqual({
-      type: 'index',
-      object: { type: 'ident', name: 'items' },
-      index: { type: 'literal', value: 0 }
+    expect(parse("items[0]")).toEqual({
+      type: "index",
+      object: { type: "ident", name: "items" },
+      index: { type: "literal", value: 0 },
     });
-    expect(parse('obj[key]')).toEqual({
-      type: 'index',
-      object: { type: 'ident', name: 'obj' },
-      index: { type: 'ident', name: 'key' }
+    expect(parse("obj[key]")).toEqual({
+      type: "index",
+      object: { type: "ident", name: "obj" },
+      index: { type: "ident", name: "key" },
     });
 
-    expect(parse('increment()')).toEqual({
-      type: 'call',
-      callee: { type: 'ident', name: 'increment' },
-      args: []
+    expect(parse("increment()")).toEqual({
+      type: "call",
+      callee: { type: "ident", name: "increment" },
+      args: [],
     });
-    expect(parse('obj.method(1, foo)')).toEqual({
-      type: 'call',
+    expect(parse("obj.method(1, foo)")).toEqual({
+      type: "call",
       callee: {
-        type: 'member',
-        object: { type: 'ident', name: 'obj' },
-        property: 'method'
+        type: "member",
+        object: { type: "ident", name: "obj" },
+        property: "method",
       },
-      args: [{ type: 'literal', value: 1 }, { type: 'ident', name: 'foo' }]
+      args: [
+        { type: "literal", value: 1 },
+        { type: "ident", name: "foo" },
+      ],
     });
   });
 
-  it('parses array and object literals', () => {
-    expect(parse('[1, 2, foo]')).toEqual({
-      type: 'array',
+  it("parses array and object literals", () => {
+    expect(parse("[1, 2, foo]")).toEqual({
+      type: "array",
       items: [
-        { type: 'literal', value: 1 },
-        { type: 'literal', value: 2 },
-        { type: 'ident', name: 'foo' }
-      ]
+        { type: "literal", value: 1 },
+        { type: "literal", value: 2 },
+        { type: "ident", name: "foo" },
+      ],
     });
 
-    expect(parse('{ a: 1, \"b\": foo }')).toEqual({
-      type: 'object',
+    expect(parse('{ a: 1, "b": foo }')).toEqual({
+      type: "object",
       entries: [
-        { key: 'a', value: { type: 'literal', value: 1 } },
-        { key: 'b', value: { type: 'ident', name: 'foo' } }
-      ]
+        { key: "a", value: { type: "literal", value: 1 } },
+        { key: "b", value: { type: "ident", name: "foo" } },
+      ],
     });
   });
 
-  it('respects grouping', () => {
-    expect(parse('(1 + 2) * 3')).toEqual({
-      type: 'binary',
-      op: '*',
+  it("respects grouping", () => {
+    expect(parse("(1 + 2) * 3")).toEqual({
+      type: "binary",
+      op: "*",
       left: {
-        type: 'binary',
-        op: '+',
-        left: { type: 'literal', value: 1 },
-        right: { type: 'literal', value: 2 }
+        type: "binary",
+        op: "+",
+        left: { type: "literal", value: 1 },
+        right: { type: "literal", value: 2 },
       },
-      right: { type: 'literal', value: 3 }
+      right: { type: "literal", value: 3 },
     });
   });
 
-  it('parses empty array and object literals', () => {
-    expect(parse('[]')).toEqual({ type: 'array', items: [] });
-    expect(parse('{}')).toEqual({ type: 'object', entries: [] });
+  it("parses empty array and object literals", () => {
+    expect(parse("[]")).toEqual({ type: "array", items: [] });
+    expect(parse("{}")).toEqual({ type: "object", entries: [] });
   });
 
-  it('parses chained calls', () => {
-    expect(parse('fn()()')).toEqual({
-      type: 'call',
+  it("parses chained calls", () => {
+    expect(parse("fn()()")).toEqual({
+      type: "call",
       callee: {
-        type: 'call',
-        callee: { type: 'ident', name: 'fn' },
-        args: []
+        type: "call",
+        callee: { type: "ident", name: "fn" },
+        args: [],
       },
-      args: []
+      args: [],
     });
   });
 
-  it('parses index-based calls', () => {
-    expect(parse('arr[0]()')).toEqual({
-      type: 'call',
+  it("parses index-based calls", () => {
+    expect(parse("arr[0]()")).toEqual({
+      type: "call",
       callee: {
-        type: 'index',
-        object: { type: 'ident', name: 'arr' },
-        index: { type: 'literal', value: 0 }
+        type: "index",
+        object: { type: "ident", name: "arr" },
+        index: { type: "literal", value: 0 },
       },
-      args: []
+      args: [],
     });
   });
 
-  it('parses nested ternary in consequent', () => {
+  it("parses nested ternary in consequent", () => {
     // a ? b ? c : d : e  →  a ? (b ? c : d) : e
-    expect(parse('a ? b ? c : d : e')).toEqual({
-      type: 'ternary',
-      test: { type: 'ident', name: 'a' },
+    expect(parse("a ? b ? c : d : e")).toEqual({
+      type: "ternary",
+      test: { type: "ident", name: "a" },
       consequent: {
-        type: 'ternary',
-        test: { type: 'ident', name: 'b' },
-        consequent: { type: 'ident', name: 'c' },
-        alternate: { type: 'ident', name: 'd' }
+        type: "ternary",
+        test: { type: "ident", name: "b" },
+        consequent: { type: "ident", name: "c" },
+        alternate: { type: "ident", name: "d" },
       },
-      alternate: { type: 'ident', name: 'e' }
+      alternate: { type: "ident", name: "e" },
     });
   });
 
-  it('throws on trailing tokens', () => {
-    expect(() => parse('1 2')).toThrow(/Expected eof/);
+  it("throws on trailing tokens", () => {
+    expect(() => parse("1 2")).toThrow(/Expected eof/);
   });
 
-  it('throws on unexpected token in primary position', () => {
-    expect(() => parse(')')).toThrow(/Unexpected token/);
+  it("throws on unexpected token in primary position", () => {
+    expect(() => parse(")")).toThrow(/Unexpected token/);
   });
 });

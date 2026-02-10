@@ -13,7 +13,7 @@ export function setupTemplate(el: Element, directiveName: string): TemplateSetup
   const placeholder = document.createComment(directiveName);
   parent.insertBefore(placeholder, el);
   el.removeAttribute(directiveName);
-  const template = document.createElement('template');
+  const template = document.createElement("template");
   template.content.append(el);
   return { isTemplate: false, template, placeholder };
 }

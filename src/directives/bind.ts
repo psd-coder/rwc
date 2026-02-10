@@ -13,7 +13,12 @@ type BindingSpec = {
   setter: Expr | null;
 };
 
-export function processBind(el: Element, exprSource: string, ctx: BindingContext, attrName: string) {
+export function processBind(
+  el: Element,
+  exprSource: string,
+  ctx: BindingContext,
+  attrName: string,
+) {
   const descriptor = attrName.slice(PREFIX.length);
   const parts = descriptor.split(".").filter(Boolean);
   const prop = parts.shift();
@@ -48,7 +53,9 @@ export function processBind(el: Element, exprSource: string, ctx: BindingContext
       return;
     }
 
-    throw new Error("x-bind shorthand requires a writable store target with set(value); use { get, set }");
+    throw new Error(
+      "x-bind shorthand requires a writable store target with set(value); use { get, set }",
+    );
   };
 
   el.addEventListener(eventName, handler);

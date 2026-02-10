@@ -1,4 +1,4 @@
-import type { Expr, CallExpr } from './types';
+import type { Expr, CallExpr } from "./types";
 
 export type ValueResolver = (value: unknown) => unknown;
 export type StorePredicate = (value: unknown) => boolean;
@@ -7,26 +7,26 @@ export function evaluate(
   expr: Expr,
   scope: Record<string, unknown>,
   specials: Record<string, unknown> = {},
-  resolve: ValueResolver = value => value,
-  isStore: StorePredicate = () => false
+  resolve: ValueResolver = (value) => value,
+  isStore: StorePredicate = () => false,
 ): unknown {
   switch (expr.type) {
-    case 'literal':
+    case "literal":
       return expr.value;
-    case 'ident': {
+    case "ident": {
       if (expr.name in specials) {
         return specials[expr.name];
       }
       return resolve(scope[expr.name]);
     }
-    case 'member': {
+    case "member": {
       const object = evaluate(expr.object, scope, specials, resolve, isStore) as
         | Record<PropertyKey, unknown>
         | null
         | undefined;
       return getProperty(object, expr.property);
     }
-    case 'index': {
+    case "index": {
       const object = evaluate(expr.object, scope, specials, resolve, isStore) as
         | Record<PropertyKey, unknown>
         | null
@@ -34,74 +34,74 @@ export function evaluate(
       const index = evaluate(expr.index, scope, specials, resolve, isStore) as PropertyKey;
       return getProperty(object, index);
     }
-    case 'array':
-      return expr.items.map(item => evaluate(item, scope, specials, resolve, isStore));
-    case 'object': {
+    case "array":
+      return expr.items.map((item) => evaluate(item, scope, specials, resolve, isStore));
+    case "object": {
       const result: Record<string, unknown> = {};
       for (const entry of expr.entries) {
         result[entry.key] = evaluate(entry.value, scope, specials, resolve, isStore);
       }
       return result;
     }
-    case 'unary': {
+    case "unary": {
       const value = evaluate(expr.arg, scope, specials, resolve, isStore);
       switch (expr.op) {
-        case '!':
+        case "!":
           return !value;
-        case '-':
+        case "-":
           return -(value as number);
-        case '+':
+        case "+":
           return +(value as number);
         default:
-          throw new Error('Unsupported unary operator');
+          throw new Error("Unsupported unary operator");
       }
     }
-    case 'binary': {
-      if (expr.op === '&&') {
+    case "binary": {
+      if (expr.op === "&&") {
         const left = evaluate(expr.left, scope, specials, resolve, isStore);
         return left ? evaluate(expr.right, scope, specials, resolve, isStore) : left;
       }
-      if (expr.op === '||') {
+      if (expr.op === "||") {
         const left = evaluate(expr.left, scope, specials, resolve, isStore);
         return left ? left : evaluate(expr.right, scope, specials, resolve, isStore);
       }
       const left = evaluate(expr.left, scope, specials, resolve, isStore);
       const right = evaluate(expr.right, scope, specials, resolve, isStore);
       switch (expr.op) {
-        case '===':
+        case "===":
           return left === right;
-        case '!==':
+        case "!==":
           return left !== right;
-        case '<':
+        case "<":
           return (left as number) < (right as number);
-        case '<=':
+        case "<=":
           return (left as number) <= (right as number);
-        case '>':
+        case ">":
           return (left as number) > (right as number);
-        case '>=':
+        case ">=":
           return (left as number) >= (right as number);
-        case '+':
+        case "+":
           return (left as number) + (right as number);
-        case '-':
+        case "-":
           return (left as number) - (right as number);
-        case '*':
+        case "*":
           return (left as number) * (right as number);
-        case '/':
+        case "/":
           return (left as number) / (right as number);
         default:
           throw new Error(`Unsupported binary operator ${expr.op}`);
       }
     }
-    case 'ternary': {
+    case "ternary": {
       const test = evaluate(expr.test, scope, specials, resolve, isStore);
       return test
         ? evaluate(expr.consequent, scope, specials, resolve, isStore)
         : evaluate(expr.alternate, scope, specials, resolve, isStore);
     }
-    case 'call':
+    case "call":
       return evaluateCall(expr, scope, specials, resolve, isStore);
     default:
-      throw new Error('Unknown expression');
+      throw new Error("Unknown expression");
   }
 }
 
@@ -110,11 +110,11 @@ function evaluateCall(
   scope: Record<string, unknown>,
   specials: Record<string, unknown>,
   resolve: ValueResolver,
-  isStore: StorePredicate
+  isStore: StorePredicate,
 ): unknown {
-  const args = expr.args.map(arg => evaluate(arg, scope, specials, resolve, isStore));
+  const args = expr.args.map((arg) => evaluate(arg, scope, specials, resolve, isStore));
 
-  if (expr.callee.type === 'member') {
+  if (expr.callee.type === "member") {
     return evaluateMemberCallTarget(
       expr.callee.object,
       expr.callee.property,
@@ -122,11 +122,11 @@ function evaluateCall(
       scope,
       specials,
       resolve,
-      isStore
+      isStore,
     );
   }
 
-  if (expr.callee.type === 'index') {
+  if (expr.callee.type === "index") {
     const index = evaluate(expr.callee.index, scope, specials, resolve, isStore) as PropertyKey;
     return evaluateMemberCallTarget(
       expr.callee.object,
@@ -135,13 +135,13 @@ function evaluateCall(
       scope,
       specials,
       resolve,
-      isStore
+      isStore,
     );
   }
 
   const fn = evaluate(expr.callee, scope, specials, resolve, isStore);
-  if (typeof fn !== 'function') {
-    throw new Error('Call target is not a function');
+  if (typeof fn !== "function") {
+    throw new Error("Call target is not a function");
   }
   return fn(...args);
 }
@@ -153,14 +153,14 @@ function evaluateMemberCallTarget(
   scope: Record<string, unknown>,
   specials: Record<string, unknown>,
   resolve: ValueResolver,
-  isStore: StorePredicate
+  isStore: StorePredicate,
 ): unknown {
   const object = evaluateCallObject(objectExpr, scope, specials, resolve, isStore, true) as
     | Record<PropertyKey, unknown>
     | null
     | undefined;
   const fn = getCallableProperty(object, property);
-  if (typeof fn === 'function') {
+  if (typeof fn === "function") {
     return fn.apply(object, args);
   }
 
@@ -169,11 +169,11 @@ function evaluateMemberCallTarget(
     | null
     | undefined;
   const fallbackFn = getCallableProperty(fallbackObject, property);
-  if (typeof fallbackFn === 'function') {
+  if (typeof fallbackFn === "function") {
     return fallbackFn.apply(fallbackObject, args);
   }
 
-  throw new Error('Call target is not a function');
+  throw new Error("Call target is not a function");
 }
 
 function evaluateCallObject(
@@ -182,10 +182,10 @@ function evaluateCallObject(
   specials: Record<string, unknown>,
   resolve: ValueResolver,
   isStore: StorePredicate,
-  preferStore: boolean
+  preferStore: boolean,
 ): unknown {
   switch (expr.type) {
-    case 'ident': {
+    case "ident": {
       if (expr.name in specials) {
         return specials[expr.name];
       }
@@ -195,18 +195,26 @@ function evaluateCallObject(
       }
       return resolve(value);
     }
-    case 'member': {
-      const object = evaluateCallObject(expr.object, scope, specials, resolve, isStore, preferStore) as
-        | Record<PropertyKey, unknown>
-        | null
-        | undefined;
+    case "member": {
+      const object = evaluateCallObject(
+        expr.object,
+        scope,
+        specials,
+        resolve,
+        isStore,
+        preferStore,
+      ) as Record<PropertyKey, unknown> | null | undefined;
       return getProperty(object, expr.property);
     }
-    case 'index': {
-      const object = evaluateCallObject(expr.object, scope, specials, resolve, isStore, preferStore) as
-        | Record<PropertyKey, unknown>
-        | null
-        | undefined;
+    case "index": {
+      const object = evaluateCallObject(
+        expr.object,
+        scope,
+        specials,
+        resolve,
+        isStore,
+        preferStore,
+      ) as Record<PropertyKey, unknown> | null | undefined;
       const index = evaluate(expr.index, scope, specials, resolve, isStore) as PropertyKey;
       return getProperty(object, index);
     }
@@ -215,35 +223,38 @@ function evaluateCallObject(
   }
 }
 
-function getProperty(object: Record<PropertyKey, unknown> | null | undefined, property: PropertyKey): unknown {
+function getProperty(
+  object: Record<PropertyKey, unknown> | null | undefined,
+  property: PropertyKey,
+): unknown {
   if (!object) return undefined;
   const value = object[property];
   if (!Object.prototype.hasOwnProperty.call(object, property)) {
-    return typeof value === 'function' ? undefined : value;
+    return typeof value === "function" ? undefined : value;
   }
   return value;
 }
 
 const DANGEROUS_CALL_KEYS = new Set([
-  '__proto__',
-  'prototype',
-  'constructor',
-  'caller',
-  'callee',
-  'arguments',
-  '__defineGetter__',
-  '__defineSetter__',
-  '__lookupGetter__',
-  '__lookupSetter__',
+  "__proto__",
+  "prototype",
+  "constructor",
+  "caller",
+  "callee",
+  "arguments",
+  "__defineGetter__",
+  "__defineSetter__",
+  "__lookupGetter__",
+  "__lookupSetter__",
 ]);
 
 function isDangerousCallKey(property: PropertyKey): boolean {
-  return typeof property === 'string' && DANGEROUS_CALL_KEYS.has(property);
+  return typeof property === "string" && DANGEROUS_CALL_KEYS.has(property);
 }
 
 function getCallableProperty(
   object: Record<PropertyKey, unknown> | null | undefined,
-  property: PropertyKey
+  property: PropertyKey,
 ): unknown {
   if (!object) return undefined;
   if (isDangerousCallKey(property)) return undefined;

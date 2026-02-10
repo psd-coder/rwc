@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defineComponent } from "../test-define";
-import { createStore, nextTag, nextTick, setStore, testReactivity } from "../test-utils";
+import { createStore, nextTag, nextTick, setStore } from "../test-utils";
 
 describe("x-bind directive", () => {
   it("syncs input value both ways with shorthand store targets", async () => {

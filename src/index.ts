@@ -1,4 +1,4 @@
-export { createRwc } from './define';
+export { createRwc } from "./define";
 export type {
   AdapterReadableStore,
   AdapterStore,
@@ -8,7 +8,7 @@ export type {
   ResolveStoreShape,
   ResolveStoreValue,
   StoreShapeTemplate,
-  StoreValueTemplate
-} from './adapters/types';
-export type { ComponentContext, ComponentRefs } from './context';
-export * from './types';
+  StoreValueTemplate,
+} from "./adapters/types";
+export type { ComponentContext, ComponentRefs } from "./context";
+export * from "./types";
