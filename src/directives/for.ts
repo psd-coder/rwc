@@ -40,9 +40,21 @@ export function processFor(
   const templateSetup = setupTemplate(el, "x-for");
   if (!templateSetup) return;
   const template = templateSetup.template;
-  const parent = template.parentNode;
-  if (!parent) return;
   const anchor = document.createComment("x-for");
+  let disposed = false;
+
+  const getContainer = (): ParentNode | null => {
+    return (anchor.parentNode as ParentNode | null) ?? template.parentNode;
+  };
+
+  const insertBeforeAnchor = (node: Node) => {
+    const container = getContainer();
+    if (!container) return;
+    if (anchor.parentNode !== container) {
+      container.append(anchor);
+    }
+    container.insertBefore(node, anchor);
+  };
 
   const entries = new Map<unknown, Entry>();
   let hydrationAttempted = false;
@@ -65,7 +77,13 @@ export function processFor(
   };
 
   const ensureAnchor = (refNode: ChildNode | null) => {
-    parent.insertBefore(anchor, refNode);
+    const container = getContainer();
+    if (!container) return;
+    if (refNode && refNode.parentNode === container) {
+      container.insertBefore(anchor, refNode);
+      return;
+    }
+    container.append(anchor);
   };
 
   const bindEntryNodes = (nodes: Node[], childCtx: BindingContext) => {
@@ -190,6 +208,7 @@ export function processFor(
   };
 
   const update = (value: unknown) => {
+    if (disposed) return;
     const items = Array.isArray(value) ? value : [];
     const nextKeys = new Set<unknown>();
     const ordered: Entry[] = [];
@@ -241,9 +260,9 @@ export function processFor(
     }
 
     const nextOrder = ordered.map((entry) => entry.key);
-    const missingNodes = ordered.some((entry) =>
-      entry.nodes.some((node) => node.parentNode !== parent),
-    );
+    const container = getContainer();
+    if (!container) return;
+    const missingNodes = ordered.some((entry) => entry.nodes.some((node) => node.parentNode !== container));
     let orderChanged = true;
     const previous = lastOrder;
 
@@ -260,7 +279,7 @@ export function processFor(
           const appended = ordered.slice(previous.length);
           for (const entry of appended) {
             for (const node of entry.nodes) {
-              parent.insertBefore(node, anchor);
+              insertBeforeAnchor(node);
             }
           }
           lastOrder = nextOrder;
@@ -277,7 +296,7 @@ export function processFor(
     if (missingNodes || orderChanged) {
       for (const entry of ordered) {
         for (const node of entry.nodes) {
-          parent.insertBefore(node, anchor);
+          insertBeforeAnchor(node);
         }
       }
     }
@@ -287,6 +306,7 @@ export function processFor(
 
   bindExpression(listExpr, ctx, update);
   ctx.disposers.add(() => {
+    disposed = true;
     for (const entry of entries.values()) {
       disposeEntry(entry);
     }

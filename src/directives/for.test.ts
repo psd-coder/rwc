@@ -260,6 +260,37 @@ describe("x-for directive", () => {
     expect(() => setStore(items, [{ id: "a" }, { id: "a" }])).toThrow(/duplicate key/i);
   });
 
+  it("updates nested x-for under x-if without stale parent errors", async () => {
+    const show = createStore(false);
+    const items = createStore([{ id: "a" }, { id: "b" }]);
+    const tag = nextTag("rwc-for-inside-if");
+    defineComponent(tag, () => ({ show, items }));
+
+    document.body.innerHTML = `
+      <${tag}>
+        <ul>
+          <template x-if="show">
+            <template x-for="item in items" x-key="item.id">
+              <li x-attr:data-id="item.id" x-text="item.id"></li>
+            </template>
+          </template>
+        </ul>
+      </${tag}>
+    `;
+
+    await nextTick();
+    setStore(show, true);
+    await nextTick();
+
+    const list = document.querySelector(`${tag} ul`) as HTMLUListElement;
+    expect(list.querySelectorAll("li").length).toBe(2);
+
+    setStore(items, [{ id: "a" }]);
+    await nextTick();
+    expect(list.querySelectorAll("li").length).toBe(1);
+    expect(list.querySelector('li[data-id="a"]')?.textContent).toBe("a");
+  });
+
   it("treats non-array values as an empty list", async () => {
     const items = createStore<unknown>(null);
     const tag = nextTag("rwc-for-nonarray");
