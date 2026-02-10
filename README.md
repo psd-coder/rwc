@@ -19,20 +19,20 @@ pnpm install
 Define a component:
 
 ```ts
-import { createRwc } from 'rwc';
-import { nanostores } from 'rwc/adapters/nanostores';
-import { atom } from 'nanostores';
+import { createRwc } from "rwc";
+import { nanostores } from "rwc/adapters/nanostores";
+import { atom } from "nanostores";
 
-const $items = atom([{ id: 1, text: 'Ship it' }]);
-const $draft = atom('');
+const $items = atom([{ id: 1, text: "Ship it" }]);
+const $draft = atom("");
 const { defineComponent } = createRwc({ adapter: nanostores });
 
-defineComponent('todo-app', (ctx) => {
+defineComponent("todo-app", (ctx) => {
   const add = () => {
     const value = $draft.get().trim();
     if (!value) return;
     $items.set([...$items.get(), { id: Date.now(), text: value }]);
-    $draft.set('');
+    $draft.set("");
     ctx.refs.input?.focus();
   };
 
@@ -59,28 +59,63 @@ Wire it up in HTML:
 
 ## Context API
 
-| Property / method | Description |
-|---|---|
-| `ctx.host` | The component's host element |
-| `ctx.refs` | Static element references collected before `setup` runs — see [x-ref](#x-ref) |
-| `ctx.props` | Reactive prop stores inferred from `x-prop:*` bindings (plus optional declared `props`) |
-| `ctx.on(target, event, listener, options?)` | Adds an event listener with automatic cleanup on disconnect. `target` can be a single `EventTarget` or an array |
-| `ctx.effect(store, cb)` | Subscribes to a single store. `cb` is called immediately with the current value and on every subsequent change |
-| `ctx.effect([stores], cb)` | Subscribes to multiple stores. `cb` receives an array of all current values, called initially and whenever any store changes |
-| `ctx.dispatch(name, detail?, options?)` | Emits a `CustomEvent` on `ctx.host`. Defaults to `bubbles: true, cancelable: true` |
-| `ctx.getElement(selector)` | Returns the first matching descendant. Throws if nothing matches |
-| `ctx.getElements(selector)` | Returns all matching descendants (empty array if none) |
-| `ctx.registerCleanup(fn)` | Registers a function to run when the component disconnects |
+| Property / method                           | Description                                                                                                                  |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ctx.host`                                  | The component's host element                                                                                                 |
+| `ctx.refs`                                  | Static element references collected before `setup` runs — see [x-ref](#x-ref)                                                |
+| `ctx.props`                                 | Reactive prop stores inferred from `x-prop:*` bindings (plus optional declared `props`)                                      |
+| `ctx.on(target, event, listener, options?)` | Adds an event listener with automatic cleanup on disconnect. `target` can be a single `EventTarget` or an array              |
+| `ctx.effect(store, cb)`                     | Subscribes to a single store. `cb` is called immediately with the current value and on every subsequent change               |
+| `ctx.effect([stores], cb)`                  | Subscribes to multiple stores. `cb` receives an array of all current values, called initially and whenever any store changes |
+| `ctx.dispatch(name, detail?, options?)`     | Emits a `CustomEvent` on `ctx.host`. Defaults to `bubbles: true, cancelable: true`                                           |
+| `ctx.getElement(selector)`                  | Returns the first matching descendant. Throws if nothing matches                                                             |
+| `ctx.getElements(selector)`                 | Returns all matching descendants (empty array if none)                                                                       |
+| `ctx.registerCleanup(fn)`                   | Registers a function to run when the component disconnects                                                                   |
+
+## Cleanup lifecycle
+
+RWC cleans up most reactive resources automatically when a component
+disconnects:
+
+- listeners registered with `ctx.on(...)`
+- subscriptions created by `ctx.effect(...)`
+- directive bindings (`x-*`) and their internal subscriptions/listeners
+- dynamic refs created inside structural directives (`x-if`, `x-for`,
+  `x-portal`)
+
+Use `ctx.registerCleanup(...)` for userland side effects that RWC does not
+own, for example timers, observers, external subscriptions, or custom DOM
+listeners.
+
+```ts
+defineComponent("my-comp", (ctx) => {
+  const timer = window.setInterval(() => {
+    // ...
+  }, 1000);
+
+  const observer = new MutationObserver(() => {
+    // ...
+  });
+  observer.observe(ctx.host, { childList: true, subtree: true });
+
+  ctx.registerCleanup(() => {
+    window.clearInterval(timer);
+    observer.disconnect();
+  });
+
+  return {};
+});
+```
 
 ## defineComponent options
 
 ```ts
 const { defineComponent } = createRwc({ adapter });
-defineComponent('my-comp', setup, { props: ['title'] });
+defineComponent("my-comp", setup, { props: ["title"] });
 ```
 
-| Option | Description |
-|---|---|
+| Option  | Description                                                                              |
+| ------- | ---------------------------------------------------------------------------------------- |
 | `props` | Optional list of prop names to predeclare in `ctx.props` before `x-prop:*` is discovered |
 
 ## Component composition
@@ -94,15 +129,19 @@ Props are passed via `x-prop` and read from `ctx.props` in the child:
 ```
 
 ```ts
-import { createRwc } from 'rwc';
-import { nanostores } from 'rwc/adapters/nanostores';
+import { createRwc } from "rwc";
+import { nanostores } from "rwc/adapters/nanostores";
 
 const { defineComponent } = createRwc({ adapter: nanostores });
 
-defineComponent<{ $item: ItemAtom }>('todo-item', (ctx) => {
-  const $item = ctx.props.$item;
-  return { $item };
-}, { props: ['$item'] });
+defineComponent<{ $item: ItemAtom }>(
+  "todo-item",
+  (ctx) => {
+    const $item = ctx.props.$item;
+    return { $item };
+  },
+  { props: ["$item"] },
+);
 ```
 
 `ctx.props` is ready before `setup` runs (after static refs are collected), so props are always available inside `setup`. Store-shaped props pass through as-is; plain values are wrapped with adapter-created stores.
@@ -114,8 +153,7 @@ defineComponent<{ $item: ItemAtom }>('todo-item', (ctx) => {
 Sets `textContent`. `null`/`undefined` render as empty string.
 
 ```html
-<span x-text="item.name"></span>
-<span x-text="count * 2"></span>
+<span x-text="item.name"></span> <span x-text="count * 2"></span>
 ```
 
 ### x-html
@@ -165,6 +203,7 @@ Renders a list with keyed reconciliation. `x-key` is required; it keeps existing
 ```
 
 Additional details:
+
 - Non-array values are silently treated as an empty list.
 - Duplicate keys throw at runtime.
 - Templates may contain multiple root nodes per iteration.
@@ -183,9 +222,11 @@ If the element already has `style="display: none"` at init time, `x-show` treats
 **SSR visibility hints** — to avoid a flash of hidden/empty state before hydration, add server-evaluated SSR attributes and a CSS rule:
 
 ```css
-[x-show-ssr='false'],
-[x-if-ssr='false'],
-[x-portal] { display: none !important; }
+[x-show-ssr="false"],
+[x-if-ssr="false"],
+[x-portal] {
+  display: none !important;
+}
 ```
 
 ```html
@@ -200,7 +241,7 @@ When the expression becomes truthy, RWC removes the `x-show-ssr`/`x-if-ssr` attr
 RWC ships a small stylesheet with the defaults for `x-cloak`, `x-show-ssr`, `x-if-ssr`, and `x-portal`:
 
 ```ts
-import 'rwc/style.css';
+import "rwc/style.css";
 ```
 
 If you prefer, you can copy the rules into your own stylesheet instead.
@@ -209,7 +250,7 @@ If you prefer, you can copy the rules into your own stylesheet instead.
 
 Registers an element in `ctx.refs`.
 
-**Static refs** — elements *not* inside `x-if`, `x-for`, `x-portal`, or `<template>` — are collected before `setup` runs, so they are available immediately as `ctx.refs`:
+**Static refs** — elements _not_ inside `x-if`, `x-for`, `x-portal`, or `<template>` — are collected before `setup` runs, so they are available immediately as `ctx.refs`:
 
 ```html
 <input x-ref="email" />
@@ -245,12 +286,12 @@ Attaches an event listener.
 
 **Modifiers** (chainable in any order):
 
-| Modifier | Effect |
-|---|---|
-| `.prevent` | calls `event.preventDefault()` |
-| `.stop` | calls `event.stopPropagation()` |
-| `.once` | listener fires at most once |
-| `.capture` | uses the capture phase |
+| Modifier   | Effect                          |
+| ---------- | ------------------------------- |
+| `.prevent` | calls `event.preventDefault()`  |
+| `.stop`    | calls `event.stopPropagation()` |
+| `.once`    | listener fires at most once     |
+| `.capture` | uses the capture phase          |
 
 ```html
 <a x-on:click.prevent.stop="navigate(url)">Link</a>
@@ -258,10 +299,10 @@ Attaches an event listener.
 
 **Special variables** available inside the expression:
 
-| Variable | Value |
-|---|---|
-| `$event` | the native `Event` object |
-| `$el` | the element the listener is attached to |
+| Variable | Value                                   |
+| -------- | --------------------------------------- |
+| `$event` | the native `Event` object               |
+| `$el`    | the element the listener is attached to |
 
 If the expression is a bare identifier that resolves to a function (e.g. `x-on:click="handler"`), it is called with the event as the first argument and the scope as `this`. If it resolves to a non-function value, nothing happens.
 
@@ -273,19 +314,18 @@ Sets or removes an HTML attribute.
 <button x-attr:disabled="isDisabled"></button>
 ```
 
-| Value | Behaviour |
-|---|---|
-| `true` | sets the attribute to `""` (correct for boolean attrs like `disabled`) |
-| `false` / `null` / `undefined` | removes the attribute |
-| anything else | coerced to string |
+| Value                          | Behaviour                                                              |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `true`                         | sets the attribute to `""` (correct for boolean attrs like `disabled`) |
+| `false` / `null` / `undefined` | removes the attribute                                                  |
+| anything else                  | coerced to string                                                      |
 
 ### x-prop
 
 Sets an element **property** directly (not an attribute). The value is assigned as-is — no coercion.
 
 ```html
-<input x-prop:value="text" />
-<input type="checkbox" x-prop:checked="done" />
+<input x-prop:value="text" /> <input type="checkbox" x-prop:checked="done" />
 ```
 
 On custom elements, store-valued props are passed through without unwrapping. Plain values are wrapped in an internal adapter store so updates propagate reactively. `ctx.props` is populated from `x-prop:*` names automatically; `defineComponent(..., { props })` is optional and only predeclares names.
@@ -295,8 +335,7 @@ On custom elements, store-valued props are passed through without unwrapping. Pl
 Two-way property binding. `x-bind` writes the current value to the element property and writes user changes back.
 
 ```html
-<input x-bind:value="title" />
-<input type="checkbox" x-bind:checked="done" />
+<input x-bind:value="title" /> <input type="checkbox" x-bind:checked="done" />
 ```
 
 Shorthand form expects the expression to resolve to a writable store target (for example, an object with `set(value)`).
@@ -310,13 +349,14 @@ For custom setter logic, use object syntax with both `get` and `set`:
 
 Setter specials:
 
-| Variable | Value |
-|---|---|
+| Variable | Value                          |
+| -------- | ------------------------------ |
 | `$value` | current element property value |
-| `$event` | native event instance |
-| `$el` | bound element |
+| `$event` | native event instance          |
+| `$el`    | bound element                  |
 
 Default event is `input`, except:
+
 - `x-bind:checked` uses `change`
 - `<select x-bind:...>` uses `change`
 - checkbox/radio/file inputs use `change`
@@ -364,7 +404,9 @@ Sets inline styles. Supports both a single property (`x-style:color`) and object
 Removes itself after the component initialises. Use alongside a CSS rule to prevent a flash of un-rendered template:
 
 ```css
-[x-cloak] { display: none; }
+[x-cloak] {
+  display: none;
+}
 ```
 
 ```html
@@ -379,19 +421,19 @@ You can also import the bundled stylesheet instead of defining your own rule.
 
 Directive values are parsed and evaluated as expressions. Supported syntax:
 
-| Category | Examples |
-|---|---|
-| Literals | `42`, `3.14`, `"hello"`, `'world'`, `true`, `false`, `null` |
-| Identifiers | `count`, `$refs`, `$props`, `item` |
-| Member / index access | `user.name`, `items[0]`, `map[key]` |
-| Calls | `fn()`, `obj.method(arg)`, `arr[0]()` |
-| Arithmetic | `a + b`, `a - b`, `a * b`, `a / b` |
-| Comparison | `a === b`, `a !== b`, `a < b`, `a <= b`, `a > b`, `a >= b` |
-| Logical | `a && b`, `a \|\| b` — both short-circuit |
-| Unary | `!flag`, `-count`, `+str` |
-| Ternary | `cond ? a : b` |
-| Array literal | `[a, b, c]` |
-| Object literal | `{ key: value, other: expr }` |
+| Category              | Examples                                                    |
+| --------------------- | ----------------------------------------------------------- |
+| Literals              | `42`, `3.14`, `"hello"`, `'world'`, `true`, `false`, `null` |
+| Identifiers           | `count`, `$refs`, `$props`, `item`                          |
+| Member / index access | `user.name`, `items[0]`, `map[key]`                         |
+| Calls                 | `fn()`, `obj.method(arg)`, `arr[0]()`                       |
+| Arithmetic            | `a + b`, `a - b`, `a * b`, `a / b`                          |
+| Comparison            | `a === b`, `a !== b`, `a < b`, `a <= b`, `a > b`, `a >= b`  |
+| Logical               | `a && b`, `a \|\| b` — both short-circuit                   |
+| Unary                 | `!flag`, `-count`, `+str`                                   |
+| Ternary               | `cond ? a : b`                                              |
+| Array literal         | `[a, b, c]`                                                 |
+| Object literal        | `{ key: value, other: expr }`                               |
 
 `+` works for string concatenation as well as addition.
 
@@ -428,31 +470,31 @@ interface ReactivityAdapter<T = unknown> {
 }
 ```
 
-| Adapter | Import path | Store detection |
-|---|---|---|
+| Adapter    | Import path               | Store detection           |
+| ---------- | ------------------------- | ------------------------- |
 | nanostores | `rwc/adapters/nanostores` | `.get()` + `.subscribe()` |
-| spred | `rwc/adapters/spred` | `.value` + `.subscribe()` |
+| spred      | `rwc/adapters/spred`      | `.value` + `.subscribe()` |
 
 Create a scoped `defineComponent` once per module:
 
 ```ts
-import { createRwc } from 'rwc';
-import { nanostores } from 'rwc/adapters/nanostores';
+import { createRwc } from "rwc";
+import { nanostores } from "rwc/adapters/nanostores";
 const { defineComponent } = createRwc({ adapter: nanostores });
-defineComponent('my-comp', setup);
+defineComponent("my-comp", setup);
 ```
 
 A custom adapter can be created by implementing the five-method interface above. `create`/`set` are used for framework-managed writable stores (for example, wrapped plain props and `x-bind` writes).
 
 ## Examples
 
-| Example | Adapter | Highlights |
-|---|---|---|
-| `examples/todo-app-spred` | spred | Core directives, two-way binding, computed values |
-| `examples/todo-app-nanostores` | nanostores | Same app with a different adapter — demonstrates adapter-agnostic design |
-| `examples/todo-app-components` | nanostores | Astro demo for nested components and prop stores |
-| `examples/combobox` | — | `x-portal`, Floating UI integration, dynamic positioning |
-| `examples/astro-nanostores-todo` | nanostores | SSR with Astro, hydration, `data-initial` seeding |
+| Example                          | Adapter    | Highlights                                                               |
+| -------------------------------- | ---------- | ------------------------------------------------------------------------ |
+| `examples/todo-app-spred`        | spred      | Core directives, two-way binding, computed values                        |
+| `examples/todo-app-nanostores`   | nanostores | Same app with a different adapter — demonstrates adapter-agnostic design |
+| `examples/todo-app-components`   | nanostores | Astro demo for nested components and prop stores                         |
+| `examples/combobox`              | —          | `x-portal`, Floating UI integration, dynamic positioning                 |
+| `examples/astro-nanostores-todo` | nanostores | SSR with Astro, hydration, `data-initial` seeding                        |
 
 Each example has its own `package.json`. Run any of them with:
 
@@ -466,7 +508,10 @@ pnpm dev
 
 ```bash
 pnpm install        # install dependencies
-pnpm dev            # Vite dev server (examples at index.html)
+pnpm lint           # run oxlint
+pnpm lint:fix       # apply auto-fixes where available
+pnpm format         # run oxfmt and write changes
+pnpm format:check   # check formatting without writing
 pnpm test:run       # run tests (single pass)
 pnpm typecheck      # tsc --noEmit
 ```
