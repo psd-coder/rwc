@@ -1,10 +1,10 @@
-# RWC
+# RWC — Reactive Web Components
 
 RWC is a small reactive web components library with a directive-based templating model. It is built to be framework-agnostic and works with pluggable reactive adapters (nanostores, @spred/core, or custom).
 
 ## Features
 
-- Web components with a minimal setup API (`defineComponent`)
+- Web components with a minimal setup API (`createRwc` + `defineComponent`)
 - Directive-driven templates (`x-text`, `x-for`, `x-if`, `x-on`, etc.)
 - Pluggable reactivity adapters (nanostores, spred, or custom)
 - SSR-friendly: `x-for` can hydrate server-rendered lists
@@ -19,12 +19,13 @@ pnpm install
 Define a component:
 
 ```ts
-import { defineComponent } from 'rwc';
+import { createRwc } from 'rwc';
 import { nanostores } from 'rwc/adapters/nanostores';
 import { atom } from 'nanostores';
 
 const $items = atom([{ id: 1, text: 'Ship it' }]);
 const $draft = atom('');
+const { defineComponent } = createRwc({ adapter: nanostores });
 
 defineComponent('todo-app', (ctx) => {
   const add = () => {
@@ -36,7 +37,7 @@ defineComponent('todo-app', (ctx) => {
   };
 
   return { $items, $draft, add };
-}, { adapter: nanostores });
+});
 ```
 
 Wire it up in HTML:
@@ -62,7 +63,7 @@ Wire it up in HTML:
 |---|---|
 | `ctx.host` | The component's host element |
 | `ctx.refs` | Static element references collected before `setup` runs — see [x-ref](#x-ref) |
-| `ctx.props` | Props declared on the component and passed via `x-prop` |
+| `ctx.props` | Reactive prop stores inferred from `x-prop:*` bindings (plus optional declared `props`) |
 | `ctx.on(target, event, listener, options?)` | Adds an event listener with automatic cleanup on disconnect. `target` can be a single `EventTarget` or an array |
 | `ctx.effect(store, cb)` | Subscribes to a single store. `cb` is called immediately with the current value and on every subsequent change |
 | `ctx.effect([stores], cb)` | Subscribes to multiple stores. `cb` receives an array of all current values, called initially and whenever any store changes |
@@ -74,13 +75,13 @@ Wire it up in HTML:
 ## defineComponent options
 
 ```ts
-defineComponent('my-comp', setup, { adapter, props: ['title'] });
+const { defineComponent } = createRwc({ adapter });
+defineComponent('my-comp', setup, { props: ['title'] });
 ```
 
 | Option | Description |
 |---|---|
-| `adapter` | **Required.** Reactivity adapter implementation |
-| `props` | Optional list of prop names to expose on `ctx.props` |
+| `props` | Optional list of prop names to predeclare in `ctx.props` before `x-prop:*` is discovered |
 
 ## Component composition
 
@@ -93,13 +94,18 @@ Props are passed via `x-prop` and read from `ctx.props` in the child:
 ```
 
 ```ts
+import { createRwc } from 'rwc';
+import { nanostores } from 'rwc/adapters/nanostores';
+
+const { defineComponent } = createRwc({ adapter: nanostores });
+
 defineComponent<{ $item: ItemAtom }>('todo-item', (ctx) => {
   const $item = ctx.props.$item;
   return { $item };
-}, { adapter: nanostores, props: ['$item'] });
+}, { props: ['$item'] });
 ```
 
-`ctx.props` is ready before `setup` runs (after static refs are collected), so props are always available inside `setup`.
+`ctx.props` is ready before `setup` runs (after static refs are collected), so props are always available inside `setup`. Store-shaped props pass through as-is; plain values are wrapped with adapter-created stores.
 
 ## Directives
 
@@ -282,7 +288,7 @@ Sets an element **property** directly (not an attribute). The value is assigned 
 <input type="checkbox" x-prop:checked="done" />
 ```
 
-On custom elements, store-valued props are passed through without unwrapping. If the child declares the prop in `defineComponent` options, it is exposed on `ctx.props`. Plain values are wrapped in an internal prop store so updates propagate reactively.
+On custom elements, store-valued props are passed through without unwrapping. Plain values are wrapped in an internal adapter store so updates propagate reactively. `ctx.props` is populated from `x-prop:*` names automatically; `defineComponent(..., { props })` is optional and only predeclares names.
 
 ### x-bind
 
@@ -376,7 +382,7 @@ Directive values are parsed and evaluated as expressions. Supported syntax:
 | Category | Examples |
 |---|---|
 | Literals | `42`, `3.14`, `"hello"`, `'world'`, `true`, `false`, `null` |
-| Identifiers | `count`, `$refs`, `item` |
+| Identifiers | `count`, `$refs`, `$props`, `item` |
 | Member / index access | `user.name`, `items[0]`, `map[key]` |
 | Calls | `fn()`, `obj.method(arg)`, `arr[0]()` |
 | Arithmetic | `a + b`, `a - b`, `a * b`, `a / b` |
@@ -388,6 +394,8 @@ Directive values are parsed and evaluated as expressions. Supported syntax:
 | Object literal | `{ key: value, other: expr }` |
 
 `+` works for string concatenation as well as addition.
+
+`$props` is available in expressions and reads prop values reactively (for example: `x-text="$props.title"`).
 
 ## SSR + hydration
 
@@ -408,12 +416,14 @@ If the pattern does not match (different tags, wrong number of nodes, etc.) it f
 
 ## Reactivity adapters
 
-Every adapter implements three methods:
+Every adapter implements five methods:
 
 ```ts
 interface ReactivityAdapter<T = unknown> {
   isStore(value: unknown): value is T;
+  create<TValue>(initial: TValue): unknown;
   get(store: T): unknown;
+  set<TValue>(store: unknown, value: TValue): void;
   subscribe(store: T, callback: (value: unknown) => void): () => void;
 }
 ```
@@ -423,14 +433,16 @@ interface ReactivityAdapter<T = unknown> {
 | nanostores | `rwc/adapters/nanostores` | `.get()` + `.subscribe()` |
 | spred | `rwc/adapters/spred` | `.value` + `.subscribe()` |
 
-Pass the adapter once per component:
+Create a scoped `defineComponent` once per module:
 
 ```ts
+import { createRwc } from 'rwc';
 import { nanostores } from 'rwc/adapters/nanostores';
-defineComponent('my-comp', setup, { adapter: nanostores });
+const { defineComponent } = createRwc({ adapter: nanostores });
+defineComponent('my-comp', setup);
 ```
 
-A custom adapter can be created by implementing the three-method interface above.
+A custom adapter can be created by implementing the five-method interface above. `create`/`set` are used for framework-managed writable stores (for example, wrapped plain props and `x-bind` writes).
 
 ## Examples
 
